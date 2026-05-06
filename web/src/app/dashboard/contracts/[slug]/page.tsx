@@ -63,7 +63,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
       console.error(err);
       modal.alert({
         title: "Erro",
-        message: "Não foi possível excluir o contrato.",
+        message: "Não foi possível excluir o contrato",
         type: "destructive"
       });
     }
@@ -86,7 +86,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
       console.error(err);
       modal.alert({
         title: "Erro",
-        message: "Não foi possível renomear o contrato.",
+        message: "Não foi possível renomear o contrato",
         type: "destructive"
       });
     }
@@ -96,7 +96,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
     if (!contract) return;
     modal.confirm({
       title: "Excluir contrato",
-      message: "Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita.",
+      message: "Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita",
       confirmLabel: "Excluir",
       type: "destructive",
       onConfirm: () => deleteMutation.mutate(contract.id)
@@ -107,7 +107,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
     if (!contract) return;
     modal.prompt({
       title: "Renomear contrato",
-      message: "Digite o novo nome para o documento:",
+      message: "Digite o novo nome para o documento",
       defaultValue: contract.filename,
       placeholder: "Ex: Contrato de Aluguel v2",
       onConfirm: (newName) => {

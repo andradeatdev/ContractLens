@@ -30,7 +30,7 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 	// Verificar se usuário já existe
 	existing, _ := s.repo.GetUserByEmail(email)
 	if existing != nil {
-		return nil, errors.New("usuário já cadastrado com este email")
+		return nil, errors.New("Usuário já cadastrado com este e-mail")
 	}
 
 	// Hash da senha
@@ -109,7 +109,7 @@ func (s *AuthService) sendVerificationEmail(email, name, token string) {
 func (s *AuthService) VerifyEmail(email, code string) (string, error) {
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return "", errors.New("usuário não encontrado")
+		return "", errors.New("Usuário não encontrado")
 	}
 
 	// Lógica de "Master Code" apenas para ambiente de desenvolvimento
@@ -126,12 +126,12 @@ func (s *AuthService) VerifyEmail(email, code string) (string, error) {
 		})
 
 		if err != nil || !isValid {
-			return "", errors.New("código de verificação inválido ou expirado")
+			return "", errors.New("Código de verificação inválido ou expirado")
 		}
 	}
 
 	if time.Now().After(user.TokenExpiresAt) {
-		return "", errors.New("prazo de verificação expirado")
+		return "", errors.New("Prazo de verificação expirado")
 	}
 
 	user.EmailVerified = true
@@ -163,17 +163,17 @@ func (s *AuthService) generateToken(user *models.User) (string, error) {
 func (s *AuthService) Login(email, password string) (string, error) {
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return "", errors.New("credenciais inválidas")
+		return "", errors.New("Credenciais inválidas")
 	}
 
 	// Verificar se o e-mail foi verificado
 	if !user.EmailVerified {
-		return "", errors.New("por favor, verifique seu e-mail antes de fazer login")
+		return "", errors.New("Por favor, verifique seu e-mail antes de realizar o login")
 	}
 
 	// Verificar senha
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return "", errors.New("credenciais inválidas")
+		return "", errors.New("Credenciais inválidas")
 	}
 
 	return s.generateToken(user)

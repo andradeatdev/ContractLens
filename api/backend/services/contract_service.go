@@ -54,19 +54,19 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 	// 1. Extração de Texto
 	text, err := pdf.ExtractText(pdfData)
 	if err != nil {
-		return nil, fmt.Errorf("pdf extraction error: %w", err)
+		return nil, fmt.Errorf("Erro ao extrair texto do PDF: %w", err)
 	}
 
 	// 2. Análise de IA
 	analysis, err := ai.AnalyzeContract(ctx, text)
 	if err != nil {
-		return nil, fmt.Errorf("ai analysis error: %w", err)
+		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
 	}
 
 	// 3. Salvar PDF no Disco (Abordagem Profissional)
 	uploadDir := "uploads"
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create uploads directory: %w", err)
+		return nil, fmt.Errorf("Falha ao criar diretório de documentos: %w", err)
 	}
 
 	// Gerar nome único para evitar sobrescrita
@@ -74,7 +74,7 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 	filePath := filepath.Join(uploadDir, uniqueFilename)
 
 	if err := os.WriteFile(filePath, pdfData, 0644); err != nil {
-		return nil, fmt.Errorf("failed to save pdf to disk: %w", err)
+		return nil, fmt.Errorf("Falha ao salvar PDF no disco: %w", err)
 	}
 
 	// 4. Montar Modelo
@@ -98,7 +98,7 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 
 	// 5. Salvar no Banco
 	if err := s.repo.Create(contract); err != nil {
-		return nil, fmt.Errorf("repository error: %w", err)
+		return nil, fmt.Errorf("Erro no repositório: %w", err)
 	}
 
 	return contract, nil
@@ -108,13 +108,13 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 	// 1. Buscar contrato pelo slug (verificando dono)
 	contract, err := s.repo.GetBySlug(contractSlug, userID)
 	if err != nil {
-		return "", fmt.Errorf("contract not found: %w", err)
+		return "", fmt.Errorf("Contrato não encontrado: %w", err)
 	}
 
 	// 2. Buscar histórico de mensagens (verificando dono)
 	history, err := s.repo.GetMessagesByContractID(contract.ID, userID)
 	if err != nil {
-		return "", fmt.Errorf("failed to get history: %w", err)
+		return "", fmt.Errorf("Falha ao buscar histórico: %w", err)
 	}
 
 	// 3. Salvar pergunta do usuário
@@ -128,7 +128,7 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 	// 4. Chamar IA
 	answer, err := ai.ChatWithContract(ctx, contract.Content, history, question)
 	if err != nil {
-		return "", fmt.Errorf("ai chat error: %w", err)
+		return "", fmt.Errorf("Erro no chat com IA: %w", err)
 	}
 
 	// 5. Salvar resposta da IA

@@ -115,7 +115,7 @@ export default function ContractsPage() {
       console.error(err);
       modal.alert({
         title: "Erro",
-        message: "Não foi possível excluir o contrato.",
+        message: "Não foi possível excluir o contrato",
         type: "destructive"
       });
     }
@@ -137,7 +137,7 @@ export default function ContractsPage() {
       console.error(err);
       modal.alert({
         title: "Erro",
-        message: "Não foi possível renomear o contrato.",
+        message: "Não foi possível renomear o contrato",
         type: "destructive"
       });
     }
@@ -146,7 +146,7 @@ export default function ContractsPage() {
   const handleDelete = (id: number) => {
     modal.confirm({
       title: "Excluir contrato",
-      message: "Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita.",
+      message: "Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita",
       confirmLabel: "Excluir",
       type: "destructive",
       onConfirm: () => deleteMutation.mutate(id)
@@ -156,7 +156,7 @@ export default function ContractsPage() {
   const handleRename = (id: number, currentName: string) => {
     modal.prompt({
       title: "Renomear contrato",
-      message: "Digite o novo nome para o documento:",
+      message: "Digite o novo nome para o documento",
       defaultValue: currentName,
       placeholder: "Ex: Contrato de Aluguel v2",
       onConfirm: (newName) => {
@@ -183,8 +183,8 @@ export default function ContractsPage() {
     } catch (err) {
       console.error(err);
       modal.alert({
-        title: "Erro de Download",
-        message: "Ocorreu um problema ao baixar o arquivo.",
+        title: "Erro no download",
+        message: "Ocorreu um problema ao baixar o arquivo",
         type: "destructive"
       });
     }

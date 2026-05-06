@@ -17,7 +17,7 @@ func NewAuthHandler(service *services.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -28,12 +28,12 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Invalid request body", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 
 	if req.Name == "" || req.Email == "" || req.Password == "" {
-		SendJSONError(w, "Nome, email e senha são obrigatórios", http.StatusBadRequest)
+		SendJSONError(w, "Nome, e-mail e senha são obrigatórios", http.StatusBadRequest)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -58,7 +58,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Invalid request body", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 
@@ -73,7 +73,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Invalid request body", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 

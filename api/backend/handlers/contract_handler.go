@@ -21,13 +21,13 @@ func NewContractHandler(service *services.ContractService) *ContractHandler {
 func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request: Upload")
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
@@ -39,46 +39,45 @@ func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error: FormFile: %v", err)
 		if err.Error() == "http: request body too large" {
-			http.Error(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
+			SendJSONError(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
 		} else {
-			http.Error(w, "Failed to read file from form", http.StatusBadRequest)
+			SendJSONError(w, "Falha ao ler arquivo do formulário", http.StatusBadRequest)
 		}
 		return
 	}
 	defer file.Close()
 
 	if header.Size > 10*1024*1024 {
-		http.Error(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
+		SendJSONError(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
 		return
 	}
 
 	fileData, err := io.ReadAll(file)
 	if err != nil {
 		log.Printf("Error: ReadAll: %v", err)
-		http.Error(w, "Failed to read file data", http.StatusInternalServerError)
+		SendJSONError(w, "Falha ao ler dados do arquivo", http.StatusInternalServerError)
 		return
 	}
 
 	contract, err := h.service.AnalyzeContract(r.Context(), userID, header.Filename, fileData)
 	if err != nil {
 		log.Printf("Error: AnalyzeContract: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contract)
+	SendJSONResponse(w, contract, http.StatusOK)
 }
 
 func (h *ContractHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
@@ -88,73 +87,70 @@ func (h *ContractHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 
 	answer, err := h.service.Chat(r.Context(), userID, req.ContractSlug, req.Message)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"answer": answer})
+	SendJSONResponse(w, map[string]string{"answer": answer}, http.StatusOK)
 }
 
 func (h *ContractHandler) List(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	contracts, err := h.service.ListContracts(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contracts)
+	SendJSONResponse(w, contracts, http.StatusOK)
 }
 
 func (h *ContractHandler) GetByID(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	contract, err := h.service.GetContractByID(id, userID)
 	if err != nil {
-		http.Error(w, "Contract not found", http.StatusNotFound)
+		SendJSONError(w, "Contrato não encontrado", http.StatusNotFound)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contract)
+	SendJSONResponse(w, contract, http.StatusOK)
 }
 
 func (h *ContractHandler) GetBySlug(w http.ResponseWriter, r *http.Request, slug string) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
@@ -162,23 +158,22 @@ func (h *ContractHandler) GetBySlug(w http.ResponseWriter, r *http.Request, slug
 	contract, err := h.service.GetContractBySlug(slug, userID)
 	if err != nil {
 		log.Printf("GetBySlug error: %v", err)
-		http.Error(w, "Contract not found", http.StatusNotFound)
+		SendJSONError(w, "Contrato não encontrado", http.StatusNotFound)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contract)
+	SendJSONResponse(w, contract, http.StatusOK)
 }
 
 func (h *ContractHandler) Update(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
@@ -186,12 +181,12 @@ func (h *ContractHandler) Update(w http.ResponseWriter, r *http.Request, id uint
 		Filename string `json:"filename"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.service.UpdateContract(id, userID, req.Filename); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -200,18 +195,18 @@ func (h *ContractHandler) Update(w http.ResponseWriter, r *http.Request, id uint
 
 func (h *ContractHandler) Delete(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	if err := h.service.DeleteContract(id, userID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -221,18 +216,18 @@ func (h *ContractHandler) Delete(w http.ResponseWriter, r *http.Request, id uint
 func (h *ContractHandler) Download(w http.ResponseWriter, r *http.Request, id uint) {
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	contract, err := h.service.GetContractByID(id, userID)
 	if err != nil {
-		http.Error(w, "Contract not found", http.StatusNotFound)
+		SendJSONError(w, "Contrato não encontrado", http.StatusNotFound)
 		return
 	}
 
 	if contract.FilePath == "" {
-		http.Error(w, "Arquivo original não disponível", http.StatusNotFound)
+		SendJSONError(w, "Arquivo original não disponível", http.StatusNotFound)
 		return
 	}
 
@@ -243,94 +238,90 @@ func (h *ContractHandler) Download(w http.ResponseWriter, r *http.Request, id ui
 
 func (h *ContractHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	user, err := h.service.GetUser(userID)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		SendJSONError(w, "Usuário não encontrado", http.StatusNotFound)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	SendJSONResponse(w, user, http.StatusOK)
 }
 
 func (h *ContractHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut && r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	var req models.User
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 
 	req.ID = userID
 	if err := h.service.UpdateUser(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(req)
+	SendJSONResponse(w, req, http.StatusOK)
 }
 
 func (h *ContractHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	activity, err := h.service.ListActivity(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(activity)
+	SendJSONResponse(w, activity, http.StatusOK)
 }
 
 func (h *ContractHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
 
 	stats, err := h.service.GetStats(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	SendJSONResponse(w, stats, http.StatusOK)
 }

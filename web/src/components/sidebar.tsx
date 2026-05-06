@@ -73,7 +73,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     modal.confirm({
       title: "Sair da conta",
-      message: "Tem certeza que deseja encerrar sua sessão?",
+      message: "Tem certeza que deseja encerrar sua sessão",
       confirmLabel: "Sair",
       type: "destructive",
       onConfirm: async () => {

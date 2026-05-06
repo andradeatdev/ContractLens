@@ -74,7 +74,7 @@ export default function SettingsPage() {
       setInitialProfile(values);
       modal.alert({
         title: "Sucesso",
-        message: "Configurações atualizadas com sucesso!",
+        message: "Configurações atualizadas com sucesso",
         type: "success"
       });
     } catch (err: any) {

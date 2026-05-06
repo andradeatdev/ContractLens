@@ -77,7 +77,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
     },
     onError: (error) => {
       console.error("Chat error:", error);
-      setMessages((prev) => [...prev, { role: "assistant", message: "Desculpe, ocorreu um erro ao processar sua pergunta." }]);
+      setMessages((prev) => [...prev, { role: "assistant", message: "Desculpe, ocorreu um erro ao processar sua pergunta" }]);
     }
   });
 

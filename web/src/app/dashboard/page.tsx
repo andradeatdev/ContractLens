@@ -234,7 +234,7 @@ export default function DashboardPage() {
                             if (selectedFile && selectedFile.size > 10 * 1024 * 1024) {
                               modal.alert({
                                 title: "Arquivo muito grande",
-                                message: "O limite máximo permitido é de 10MB.",
+                                message: "O limite máximo permitido é de 10MB",
                                 type: "destructive"
                               });
                               e.target.value = ""; // Limpa o input

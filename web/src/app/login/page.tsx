@@ -57,12 +57,12 @@ export default function LoginPage() {
         throw new Error(data.error || "Erro ao fazer login");
       }
 
-      toast.success("Login realizado com sucesso!", {
-        description: "Bem-vindo de volta ao Contract Lens."
+      toast.success("Login realizado com sucesso", {
+        description: "Seja bem-vindo de volta ao Contract Lens."
       });
       navigateWithTransition('/dashboard', 'nav-forward');
     } catch (err: any) {
-      toast.error("Falha no login", {
+      toast.error("Erro ao realizar login", {
         description: err.message
       });
     } finally {

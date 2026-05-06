@@ -74,12 +74,12 @@ export default function RegisterPage() {
         throw new Error(data.error || "Erro ao criar conta");
       }
 
-      toast.success("Conta criada!", {
-        description: "Enviamos um código para seu e-mail."
+      toast.success("Conta criada com sucesso", {
+        description: "Um código de verificação foi enviado para seu e-mail."
       });
       setRegisteredEmail(values.email);
     } catch (err: any) {
-      toast.error("Erro no cadastro", {
+      toast.error("Erro ao criar conta", {
         description: err.message
       });
     } finally {
@@ -104,15 +104,15 @@ export default function RegisterPage() {
         throw new Error(data.error || "Código inválido");
       }
 
-      toast.success("E-mail verificado!", {
-        description: "Seja bem-vindo ao sistema."
+      toast.success("E-mail verificado com sucesso", {
+        description: "Sua conta está ativa e pronta para uso."
       });
       
       startTransition(() => {
         router.push("/dashboard");
       });
     } catch (err: any) {
-      toast.error("Erro na verificação", {
+      toast.error("Erro ao verificar e-mail", {
         description: err.message
       });
       setOtpValue("");
