@@ -112,7 +112,7 @@ func NewApp() http.Handler {
 		}
 	})))
 
-	return mux
+	return handlers.CanonicalLogMiddleware(mux)
 }
 
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
