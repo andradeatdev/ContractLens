@@ -8,8 +8,8 @@ export function proxy(request: NextRequest) {
 
   // Log Canônico do Proxy (Vercel Edge/Middleware)
   logger.info(`Request: ${request.method} ${pathname}`, {
-    ip: request.ip,
-    geo: request.geo,
+    ip: request.headers.get('x-forwarded-for') || 'unknown',
+    ua: request.headers.get('user-agent') || 'unknown',
   });
 
   // Passa o Trace ID para o Backend e outras rotas
