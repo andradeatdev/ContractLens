@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instalar pnpm
+RUN npm install -g pnpm
+
+# Copiar apenas os arquivos de dependências primeiro
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+
+# Instalar dependências
+RUN pnpm install
+
+# Copiar o resto do código
+COPY . .
+
+EXPOSE 3000
+
+# Rodar no modo dev com hot-reload
+CMD ["pnpm", "dev"]
