@@ -105,8 +105,8 @@ func (s *AuthService) VerifyEmail(email, code string) (string, error) {
 		return "", errors.New("usuário não encontrado")
 	}
 
-	// Lógica de "Master Code" para ambiente de desenvolvimento
-	if code == "000000" {
+	// Lógica de "Master Code" apenas para ambiente de desenvolvimento
+	if code == "000000" && os.Getenv("ENV") != "production" && os.Getenv("VERCEL") != "1" {
 		fmt.Printf("[DEV] Usando código mestre para o e-mail: %s\n", email)
 	} else {
 		// Validar usando TOTP com uma janela de tempo generosa (Skew)
