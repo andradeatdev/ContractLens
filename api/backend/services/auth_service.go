@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/internal/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/internal/repositories"
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"

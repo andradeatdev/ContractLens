@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/internal/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/internal/services"
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/services"
 )
 
 type ContractHandler struct {

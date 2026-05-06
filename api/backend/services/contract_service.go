@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/internal/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/internal/repositories"
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/ai"
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/pdf"
 )
