@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -66,8 +67,8 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 		return nil, err
 	}
 
-	// Disparar envio de e-mail (não bloqueante para o registro, mas importante)
-	go s.sendVerificationEmail(user.Email, user.Name, otpCode)
+	// Disparar envio de e-mail (Síncrono para garantir execução em ambientes Serverless)
+	s.sendVerificationEmail(user.Email, user.Name, otpCode)
 
 	return user, nil
 }
@@ -76,10 +77,13 @@ func (s *AuthService) sendVerificationEmail(email, name, token string) {
 	// Chamada para a API interna do Next.js
 	nextAppURL := os.Getenv("NEXT_PUBLIC_APP_URL")
 	if nextAppURL == "" {
+		// Fallback para desenvolvimento local se não houver env var
 		nextAppURL = "http://host.docker.internal:3000"
 	}
 
 	apiURL := fmt.Sprintf("%s/api/emails/verify", nextAppURL)
+	fmt.Printf("[AuthService] Tentando disparar e-mail via: %s\n", apiURL)
+
 	payload := map[string]string{
 		"email": email,
 		"name":  name,
@@ -89,13 +93,16 @@ func (s *AuthService) sendVerificationEmail(email, name, token string) {
 	body, _ := json.Marshal(payload)
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		fmt.Printf("Erro ao chamar API de e-mail: %v\n", err)
+		fmt.Printf("[AuthService] ERRO CRÍTICO ao chamar API de e-mail: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("API de e-mail retornou status: %d\n", resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		fmt.Printf("[AuthService] API de e-mail retornou erro (%d): %s\n", resp.StatusCode, string(respBody))
+	} else {
+		fmt.Printf("[AuthService] Solicitação de envio de e-mail aceita com sucesso para: %s\n", email)
 	}
 }
 
