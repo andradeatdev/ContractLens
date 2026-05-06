@@ -1,0 +1,34 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+/web/node_modules/
+.pnpm-store/
+
+# Build
+/web/.next/
+/web/out/
+/api/tmp/
+/api/bin/
+/api/uploads/*
+!/api/uploads/.gitkeep
+
+# Environment
+.env
+.env.local
+/web/.env.local
+/web/.env.production
+/api/.env
+
+# IDEs
+.vscode/
+.idea/
+
+# Docker
+postgres_data/
+
+# Agents/Skills
+.agents/
+skills-lock.json
