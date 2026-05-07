@@ -32,7 +32,18 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [otpValue, setOtpValue] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const router = useRouter();
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const {
     register,
@@ -413,18 +424,6 @@ export default function RegisterPage() {
               onClick={(e) => {
                 e.preventDefault();
                 navigateWithTransition('/login', 'nav-back');
-              }}
-              className="text-primary font-bold hover:underline cursor-pointer"
-            >
-              Entrar agora
-            </Link>
-          </p>
-        </div>
-      </div>
-    </DirectionalTransition>
-  );
-}
-             navigateWithTransition('/login', 'nav-back');
               }}
               className="text-primary font-bold hover:underline cursor-pointer"
             >
