@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Email Service] Enviando código OTP: ${token}`);
 
     const { data, error } = await resend.emails.send({
-      from: "Contract Lens <onboarding@resend.dev>",
+      from: "Contract Lens <verify@notifications.hdyzen.xyz>",
       to: [email],
       subject: "Seu código de verificação",
       react: VerificationEmail({ userName: name, validationCode: token }),
