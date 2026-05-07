@@ -65,6 +65,11 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 
 	// 3. Salvar PDF no Disco (Abordagem Profissional)
 	uploadDir := "uploads"
+	// Na Vercel, o sistema de arquivos é read-only, exceto o diretório /tmp
+	if os.Getenv("VERCEL") == "1" {
+		uploadDir = "/tmp/uploads"
+	}
+	
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		return nil, fmt.Errorf("Falha ao criar diretório de documentos: %w", err)
 	}
