@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, startTransition } from "react";
+import { useState, startTransition, useEffect } from "react";
 import Link from "next/link";
 import { Shield, Check, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
@@ -413,6 +413,18 @@ export default function RegisterPage() {
               onClick={(e) => {
                 e.preventDefault();
                 navigateWithTransition('/login', 'nav-back');
+              }}
+              className="text-primary font-bold hover:underline cursor-pointer"
+            >
+              Entrar agora
+            </Link>
+          </p>
+        </div>
+      </div>
+    </DirectionalTransition>
+  );
+}
+             navigateWithTransition('/login', 'nav-back');
               }}
               className="text-primary font-bold hover:underline cursor-pointer"
             >
