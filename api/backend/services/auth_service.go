@@ -30,7 +30,40 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 	// Verificar se usuário já existe
 	existing, _ := s.repo.GetUserByEmail(email)
 	if existing != nil {
-		return nil, errors.New("Usuário já cadastrado com este e-mail")
+		if existing.EmailVerified {
+			return nil, errors.New("Usuário já cadastrado com este e-mail")
+		}
+
+		// Se o e-mail não foi verificado, permitimos "re-cadastrar" para atualizar senha ou reenviar código
+		// Mas respeitamos o cooldown de 60 segundos
+		if time.Since(existing.LastVerificationEmailSentAt) < 60*time.Second {
+			remaining := 60 - int(time.Since(existing.LastVerificationEmailSentAt).Seconds())
+			return nil, fmt.Errorf("Aguarde %d segundos para reenviar o código", remaining)
+		}
+
+		// Hash da nova senha
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+
+		existing.Name = name
+		existing.PasswordHash = string(hashedPassword)
+		existing.TokenExpiresAt = time.Now().Add(24 * time.Hour)
+		existing.LastVerificationEmailSentAt = time.Now()
+
+		if err := s.repo.UpdateUser(existing); err != nil {
+			return nil, err
+		}
+
+		// Gerar o código de 6 dígitos atual para enviar por e-mail
+		otpCode, err := totp.GenerateCode(existing.VerificationToken, time.Now())
+		if err != nil {
+			return nil, err
+		}
+
+		s.sendVerificationEmail(existing.Email, existing.Name, otpCode)
+		return existing, nil
 	}
 
 	// Hash da senha
@@ -49,12 +82,13 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 	}
 
 	user := &models.User{
-		Name:              name,
-		Email:             email,
-		PasswordHash:      string(hashedPassword),
-		VerificationToken: key.Secret(), // Salvamos o Secret em vez do código direto
-		TokenExpiresAt:    time.Now().Add(24 * time.Hour),
-		EmailVerified:     false,
+		Name:                        name,
+		Email:                       email,
+		PasswordHash:                string(hashedPassword),
+		VerificationToken:           key.Secret(),
+		TokenExpiresAt:              time.Now().Add(24 * time.Hour),
+		LastVerificationEmailSentAt: time.Now(),
+		EmailVerified:               false,
 	}
 
 	if err := s.repo.CreateUser(user); err != nil {
@@ -71,6 +105,40 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 	s.sendVerificationEmail(user.Email, user.Name, otpCode)
 
 	return user, nil
+}
+
+func (s *AuthService) ResendVerificationCode(email string) error {
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return errors.New("Usuário não encontrado")
+	}
+
+	if user.EmailVerified {
+		return errors.New("Este e-mail já foi verificado")
+	}
+
+	// Validar cooldown de 60 segundos
+	if time.Since(user.LastVerificationEmailSentAt) < 60*time.Second {
+		remaining := 60 - int(time.Since(user.LastVerificationEmailSentAt).Seconds())
+		return fmt.Errorf("Aguarde %d segundos para reenviar o código", remaining)
+	}
+
+	// Atualizar timestamp e expiração
+	user.LastVerificationEmailSentAt = time.Now()
+	user.TokenExpiresAt = time.Now().Add(24 * time.Hour)
+
+	if err := s.repo.UpdateUser(user); err != nil {
+		return err
+	}
+
+	// Gerar o código de 6 dígitos atual
+	otpCode, err := totp.GenerateCode(user.VerificationToken, time.Now())
+	if err != nil {
+		return err
+	}
+
+	s.sendVerificationEmail(user.Email, user.Name, otpCode)
+	return nil
 }
 
 func (s *AuthService) sendVerificationEmail(email, name, token string) {

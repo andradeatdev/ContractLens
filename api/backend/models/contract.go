@@ -48,6 +48,7 @@ type User struct {
 	EmailVerified    bool      `gorm:"default:false" json:"email_verified"`
 	VerificationToken string    `gorm:"index" json:"-"`
 	TokenExpiresAt   time.Time `json:"-"`
+	LastVerificationEmailSentAt time.Time `json:"-"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }

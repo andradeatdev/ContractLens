@@ -60,6 +60,7 @@ func NewApp() http.Handler {
 	mux.HandleFunc("/auth/register", corsMiddleware(authHandler.Register))
 	mux.HandleFunc("/auth/login", corsMiddleware(authHandler.Login))
 	mux.HandleFunc("/auth/verify", corsMiddleware(authHandler.VerifyEmail))
+	mux.HandleFunc("/auth/resend-code", corsMiddleware(authHandler.ResendVerificationCode))
 
 	// Rotas Protegidas
 	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contractHandler.Upload)))

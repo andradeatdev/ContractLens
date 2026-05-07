@@ -78,8 +78,43 @@ export default function RegisterPage() {
         description: "Um código de verificação foi enviado para seu e-mail."
       });
       setRegisteredEmail(values.email);
+      setResendCooldown(60);
     } catch (err: any) {
       toast.error("Erro ao criar conta", {
+        description: err.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onResendCode = async () => {
+    if (resendCooldown > 0 || !registeredEmail) return;
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const match = data.error.match(/Aguarde (\d+) segundos/);
+        if (match) {
+          setResendCooldown(parseInt(match[1]));
+        }
+        throw new Error(data.error || "Erro ao reenviar código");
+      }
+
+      toast.success("Código reenviado", {
+        description: "Um novo código foi enviado para seu e-mail."
+      });
+      setResendCooldown(60);
+    } catch (err: any) {
+      toast.error("Erro ao reenviar código", {
         description: err.message
       });
     } finally {
@@ -181,11 +216,19 @@ export default function RegisterPage() {
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verificar código"}
                   </Button>
 
-                  <div className="text-center">
+                  <div className="flex flex-col gap-4 text-center">
+                    <button 
+                      onClick={onResendCode}
+                      disabled={loading || resendCooldown > 0}
+                      className="text-xs font-bold text-primary hover:text-primary/80 disabled:text-muted-foreground transition-colors uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      {resendCooldown > 0 ? `Reenviar código (${resendCooldown}s)` : "Reenviar código"}
+                    </button>
+
                     <button 
                       onClick={() => setRegisteredEmail(null)}
                       disabled={loading}
-                      className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
+                      className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
                     >
                       Voltar para o cadastro
                     </button>

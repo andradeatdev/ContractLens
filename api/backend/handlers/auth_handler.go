@@ -100,3 +100,32 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	SendJSONResponse(w, map[string]string{"message": "E-mail verificado com sucesso", "token": token}, http.StatusOK)
 }
+
+func (h *AuthHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Email string `json:"email"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		return
+	}
+
+	if req.Email == "" {
+		SendJSONError(w, "E-mail é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.ResendVerificationCode(req.Email)
+	if err != nil {
+		SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	SendJSONResponse(w, map[string]string{"message": "Código reenviado com sucesso"}, http.StatusOK)
+}
