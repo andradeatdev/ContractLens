@@ -93,6 +93,10 @@ func (r *ContractRepository) Delete(id uint, userID uint) error {
 	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Contract{}).Error
 }
 
+func (r *ContractRepository) DeleteRisksByContractID(contractID uint) error {
+	return r.db.Where("contract_id = ?", contractID).Delete(&models.Risk{}).Error
+}
+
 func (r *ContractRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {

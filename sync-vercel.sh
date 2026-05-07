@@ -25,8 +25,27 @@ if [[ -n $(git status -s) ]]; then
     fi
 fi
 
-# 2. Push para o GitHub
-echo -e "\n${BLUE}1/3 Realizando Push para o GitHub...${NC}"
+# 2. Executar Testes Automatizados
+echo -e "\n${BLUE}1/5 Executando Testes Automatizados...${NC}"
+
+echo -e "${YELLOW}Rodando testes do Backend (Go)...${NC}"
+if cd api && go test ./backend/services/... -v && cd ..; then
+    echo -e "${GREEN}Testes do Backend passaram!${NC}"
+else
+    echo -e "${RED}Testes do Backend FALHARAM. Abortando deploy.${NC}"
+    exit 1
+fi
+
+echo -e "\n${YELLOW}Rodando testes do Frontend (Vitest)...${NC}"
+if cd web && pnpm test && cd ..; then
+    echo -e "${GREEN}Testes do Frontend passaram!${NC}"
+else
+    echo -e "${RED}Testes do Frontend FALHARAM. Abortando deploy.${NC}"
+    exit 1
+fi
+
+# 3. Push para o GitHub
+echo -e "\n${BLUE}2/5 Realizando Push para o GitHub...${NC}"
 if git push origin main; then
     echo -e "${GREEN}Push concluído com sucesso!${NC}"
 else
@@ -34,8 +53,8 @@ else
     exit 1
 fi
 
-# 3. Deploy do Backend (API)
-echo -e "\n${BLUE}2/3 Realizando Deploy do Backend (API)...${NC}"
+# 4. Deploy do Backend (API)
+echo -e "\n${BLUE}3/5 Realizando Deploy do Backend (API)...${NC}"
 if cd api && vercel deploy --prod --yes --scope zenstorages-projects; then
     echo -e "${GREEN}Deploy da API concluído!${NC}"
 else
@@ -43,8 +62,8 @@ else
     exit 1
 fi
 
-# 4. Deploy do Frontend (Web)
-echo -e "\n${BLUE}3/3 Realizando Deploy do Frontend (Web)...${NC}"
+# 5. Deploy do Frontend (Web)
+echo -e "\n${BLUE}4/5 Realizando Deploy do Frontend (Web)...${NC}"
 cd ../web
 if vercel deploy --prod --yes --scope zenstorages-projects; then
     echo -e "${GREEN}Deploy da Web concluído!${NC}"

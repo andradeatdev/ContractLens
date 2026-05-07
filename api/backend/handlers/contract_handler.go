@@ -142,6 +142,46 @@ func (h *ContractHandler) GetByID(w http.ResponseWriter, r *http.Request, id uin
 	SendJSONResponse(w, contract, http.StatusOK)
 }
 
+func (h *ContractHandler) Reanalyze(w http.ResponseWriter, r *http.Request, id uint) {
+	if r.Method != http.MethodPost {
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	contract, err := h.service.ReanalyzeContract(r.Context(), id, userID)
+	if err != nil {
+		log.Printf("Error: ReanalyzeContract: %v", err)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	SendJSONResponse(w, contract, http.StatusOK)
+}
+
+func (h *ContractHandler) ExportAnalysis(w http.ResponseWriter, r *http.Request, id uint) {
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	content, filename, err := h.service.ExportAnalysis(id, userID)
+	if err != nil {
+		SendJSONError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Type", "text/markdown")
+	w.Write([]byte(content))
+}
+
 func (h *ContractHandler) GetBySlug(w http.ResponseWriter, r *http.Request, slug string) {
 	if r.Method != http.MethodGet {
 		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)

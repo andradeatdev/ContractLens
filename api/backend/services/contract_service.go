@@ -18,12 +18,45 @@ import (
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/pdf"
 )
 
-type ContractService struct {
-	repo *repositories.ContractRepository
+type AIAnalyzer interface {
+	Analyze(ctx context.Context, text string) (*ai.AnalysisResult, error)
+	Chat(ctx context.Context, content string, history []models.ChatMessage, question string) (string, error)
 }
 
-func NewContractService(repo *repositories.ContractRepository) *ContractService {
-	return &ContractService{repo: repo}
+type GeminiAnalyzer struct{}
+
+func (g *GeminiAnalyzer) Analyze(ctx context.Context, text string) (*ai.AnalysisResult, error) {
+	return ai.AnalyzeContract(ctx, text)
+}
+
+func (g *GeminiAnalyzer) Chat(ctx context.Context, content string, history []models.ChatMessage, question string) (string, error) {
+	return ai.ChatWithContract(ctx, content, history, question)
+}
+
+type TextExtractor interface {
+	Extract(data []byte) (string, error)
+}
+
+type PDFExtractor struct{}
+
+func (p *PDFExtractor) Extract(data []byte) (string, error) {
+	return pdf.ExtractText(data)
+}
+
+type ContractService struct {
+	repo      *repositories.ContractRepository
+	ai        AIAnalyzer
+	extractor TextExtractor
+}
+
+func NewContractService(repo *repositories.ContractRepository, analyzer AIAnalyzer, extractor TextExtractor) *ContractService {
+	if analyzer == nil {
+		analyzer = &GeminiAnalyzer{}
+	}
+	if extractor == nil {
+		extractor = &PDFExtractor{}
+	}
+	return &ContractService{repo: repo, ai: analyzer, extractor: extractor}
 }
 
 func (s *ContractService) GenerateSlugPublic(filename string) string {
@@ -52,13 +85,13 @@ func (s *ContractService) GenerateSlugPublic(filename string) string {
 
 func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, filename string, pdfData []byte) (*models.Contract, error) {
 	// 1. Extração de Texto
-	text, err := pdf.ExtractText(pdfData)
+	text, err := s.extractor.Extract(pdfData)
 	if err != nil {
 		return nil, fmt.Errorf("Erro ao extrair texto do PDF: %w", err)
 	}
 
 	// 2. Análise de IA
-	analysis, err := ai.AnalyzeContract(ctx, text)
+	analysis, err := s.ai.Analyze(ctx, text)
 	if err != nil {
 		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
 	}
@@ -109,6 +142,100 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 	return contract, nil
 }
 
+func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID uint) (*models.Contract, error) {
+	// 1. Buscar contrato
+	contract, err := s.repo.GetByID(id, userID)
+	if err != nil {
+		return nil, fmt.Errorf("Contrato não encontrado: %w", err)
+	}
+
+	// 2. Ler arquivo original
+	pdfData, err := os.ReadFile(contract.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("Falha ao ler arquivo original: %w", err)
+	}
+
+	// 3. Extração de Texto
+	text, err := s.extractor.Extract(pdfData)
+	if err != nil {
+		return nil, fmt.Errorf("Erro ao extrair texto do PDF: %w", err)
+	}
+
+	// 4. Análise de IA
+	analysis, err := s.ai.Analyze(ctx, text)
+	if err != nil {
+		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
+	}
+
+	// 5. Limpar riscos antigos
+	if err := s.repo.DeleteRisksByContractID(contract.ID); err != nil {
+		return nil, fmt.Errorf("Erro ao limpar riscos antigos: %w", err)
+	}
+
+	// 6. Atualizar Modelo
+	contract.Summary = analysis.Summary
+	contract.Content = text
+	contract.Risks = []models.Risk{} // Reset para o GORM salvar os novos
+
+	for _, r := range analysis.Risks {
+		contract.Risks = append(contract.Risks, models.Risk{
+			ContractID:  contract.ID,
+			Title:       r.Title,
+			Severity:    r.Severity,
+			Explanation: r.Explanation,
+			Clause:      r.Clause,
+		})
+	}
+
+	// 7. Salvar no Banco
+	if err := s.repo.Update(contract); err != nil {
+		return nil, fmt.Errorf("Erro ao salvar atualização: %w", err)
+	}
+
+	return contract, nil
+}
+
+func (s *ContractService) ExportAnalysis(id uint, userID uint) (string, string, error) {
+	contract, err := s.repo.GetByID(id, userID)
+	if err != nil {
+		return "", "", fmt.Errorf("Contrato não encontrado: %w", err)
+	}
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("# Relatório de Análise: %s\n\n", contract.Filename))
+	sb.WriteString(fmt.Sprintf("**Data da Análise:** %s\n\n", contract.UpdatedAt.Format("02/01/2006 15:04")))
+	
+	sb.WriteString("## Resumo Executivo\n")
+	sb.WriteString(contract.Summary + "\n\n")
+
+	sb.WriteString("## Pontos de Atenção Identificados\n\n")
+	if len(contract.Risks) == 0 {
+		sb.WriteString("Nenhum risco crítico foi identificado nesta análise.\n")
+	} else {
+		for i, r := range contract.Risks {
+			severityEmoji := "🟢"
+			if r.Severity == "high" {
+				severityEmoji = "🔴"
+			} else if r.Severity == "medium" {
+				severityEmoji = "🟡"
+			}
+			
+			sb.WriteString(fmt.Sprintf("### %d. %s %s\n", i+1, severityEmoji, r.Title))
+			sb.WriteString(fmt.Sprintf("**Gravidade:** %s\n\n", strings.Title(r.Severity)))
+			sb.WriteString(fmt.Sprintf("**Explicação:** %s\n\n", r.Explanation))
+			if r.Clause != "" {
+				sb.WriteString("**Cláusula de referência:**\n")
+				sb.WriteString(fmt.Sprintf("> \"%s\"\n\n", r.Clause))
+			}
+			sb.WriteString("---\n\n")
+		}
+	}
+
+	sb.WriteString("\n*Relatório gerado automaticamente por Contract Lens AI.*")
+
+	return sb.String(), fmt.Sprintf("analise_%s.md", contract.Slug), nil
+}
+
 func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug string, question string) (string, error) {
 	// 1. Buscar contrato pelo slug (verificando dono)
 	contract, err := s.repo.GetBySlug(contractSlug, userID)
@@ -131,7 +258,7 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 	s.repo.CreateMessage(userMsg)
 
 	// 4. Chamar IA
-	answer, err := ai.ChatWithContract(ctx, contract.Content, history, question)
+	answer, err := s.ai.Chat(ctx, contract.Content, history, question)
 	if err != nil {
 		return "", fmt.Errorf("Erro no chat com IA: %w", err)
 	}

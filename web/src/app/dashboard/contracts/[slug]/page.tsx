@@ -1,8 +1,9 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { ContractAnalysis } from "@/components/contract-analysis";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
-import { ChevronRight, Download, Edit2, Loader2, MoreVertical, Trash2 } from "lucide-react";
+import { ChevronRight, Download, Edit2, FileText, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import { useModal } from "@/components/modal-provider";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +50,29 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
   });
 
   const error = queryError ? (queryError as Error).message : null;
+
+  const reanalyzeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/contracts/${id}/reanalyze`, { method: "POST" });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Erro ao reanalisar");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['contract', resolvedParams.slug], data);
+      toast.success("Análise atualizada", {
+        description: "O documento foi reanalisado com sucesso pela IA."
+      });
+    },
+    onError: (err: any) => {
+      console.error(err);
+      toast.error("Erro na reanálise", {
+        description: err.message
+      });
+    }
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -135,6 +160,41 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleExportAnalysis = async () => {
+    if (!contract) return;
+    try {
+      const response = await fetch(`/api/contracts/${contract.id}/export`);
+      if (!response.ok) throw new Error("Erro ao exportar análise");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `analise_${contract.slug}.md`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success("Exportação concluída", {
+        description: "O relatório foi baixado com sucesso."
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao exportar");
+    }
+  };
+
+  const handleReanalyze = () => {
+    if (!contract) return;
+    modal.confirm({
+      title: "Reanalisar documento",
+      message: "Isso executará a análise de IA novamente. Os riscos atuais serão substituídos. Deseja continuar?",
+      confirmLabel: "Sim, reanalisar",
+      onConfirm: () => reanalyzeMutation.mutate(contract.id)
+    });
   };
 
   if (loading) {
@@ -235,7 +295,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
                     size="icon"
                     className="rounded-lg text-muted-foreground transition-all cursor-pointer active:scale-90 hover:bg-muted"
                   >
-                    <MoreVertical className="h-5 w-5" />
+                    {reanalyzeMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <MoreVertical className="h-5 w-5" />}
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -243,19 +303,37 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
                 <p>Ações do contrato</p>
               </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent align="end" className="w-48 rounded-2xl shadow-2xl p-2 border-border bg-background animate-in fade-in slide-in-from-top-2 duration-200">
+            <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-border bg-background animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Documento</div>
               <DropdownMenuItem onClick={handleDownload} className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted transition-colors">
                 <Download className="h-4 w-4 text-muted-foreground" />
-                Baixar arquivo
+                Baixar original
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleRename} className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted transition-colors">
                 <Edit2 className="h-4 w-4 text-muted-foreground" />
                 Renomear
               </DropdownMenuItem>
+              
               <DropdownMenuSeparator className="bg-border my-1 mx-1" />
+              <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Análise</div>
+              <DropdownMenuItem 
+                onClick={handleReanalyze} 
+                disabled={reanalyzeMutation.isPending}
+                className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted transition-colors"
+              >
+                <RefreshCw className={cn("h-4 w-4 text-muted-foreground", reanalyzeMutation.isPending && "animate-spin")} />
+                Reanalisar agora
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportAnalysis} className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted transition-colors">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Exportar análise (.md)
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-border my-1 mx-1" />
+              <div className="px-3 py-2 text-[10px] font-bold text-red-500/60 uppercase tracking-wider text-pretty">Zona de Perigo</div>
               <DropdownMenuItem onClick={handleDelete} className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted text-red-500 focus:text-red-600 transition-colors">
                 <Trash2 className="h-4 w-4" />
-                Excluir
+                Excluir contrato
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

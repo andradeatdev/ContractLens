@@ -43,7 +43,7 @@ func NewApp() http.Handler {
 		log.Printf("Erro ao criar usuário padrão: %v", err)
 	}
 
-	contractService := services.NewContractService(contractRepo)
+	contractService := services.NewContractService(contractRepo, nil, nil)
 	contractHandler := handlers.NewContractHandler(contractService)
 
 	authService := services.NewAuthService(contractRepo)
@@ -93,6 +93,16 @@ func NewApp() http.Handler {
 		var id uint
 		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/download", &id); err == nil {
 			contractHandler.Download(w, r, id)
+			return
+		}
+
+		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/reanalyze", &id); err == nil {
+			contractHandler.Reanalyze(w, r, id)
+			return
+		}
+
+		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/export", &id); err == nil {
+			contractHandler.ExportAnalysis(w, r, id)
 			return
 		}
 
