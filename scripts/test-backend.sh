@@ -4,7 +4,7 @@ source "$(dirname "$0")/utils.sh"
 log_info "Executando Testes do Backend (Go)..."
 
 cd api
-/home/gabriel/go/bin/go test ./backend/services/... -v
+go test ./backend/services/... -v
 STATUS=$?
 cd ..
 
