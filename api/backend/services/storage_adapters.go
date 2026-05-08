@@ -57,6 +57,7 @@ func (a *VercelBlobAdapter) Upload(ctx context.Context, filename string, data []
 
 	req.Header.Set("Authorization", "Bearer "+a.Token)
 	req.Header.Set("x-api-version", "1")
+	req.Header.Set("x-access", "private")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -85,6 +86,9 @@ func (a *VercelBlobAdapter) Download(ctx context.Context, url string) ([]byte, e
 		return nil, err
 	}
 
+	req.Header.Set("Authorization", "Bearer "+a.Token)
+	req.Header.Set("x-api-version", "1")
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -105,6 +109,7 @@ func (a *VercelBlobAdapter) Delete(ctx context.Context, url string) error {
 	}
 
 	req.Header.Set("Authorization", "Bearer "+a.Token)
+	req.Header.Set("x-api-version", "1")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
