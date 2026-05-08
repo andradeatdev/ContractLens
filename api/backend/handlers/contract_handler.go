@@ -121,6 +121,59 @@ func (h *ContractHandler) List(w http.ResponseWriter, r *http.Request) {
 	SendJSONResponse(w, contracts, http.StatusOK)
 }
 
+func (h *ContractHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		ContractSlug string `json:"contract_slug"`
+		Content      string `json:"content"`
+		SelectedText string `json:"selected_text"`
+		Color        string `json:"color"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		return
+	}
+
+	note, err := h.service.AddNote(userID, req.ContractSlug, req.Content, req.SelectedText, req.Color)
+	if err != nil {
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	SendJSONResponse(w, note, http.StatusOK)
+}
+
+func (h *ContractHandler) DeleteNote(w http.ResponseWriter, r *http.Request, id uint) {
+	if r.Method != http.MethodDelete {
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.RemoveNote(id, userID); err != nil {
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *ContractHandler) GetByID(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodGet {
 		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)

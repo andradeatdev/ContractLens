@@ -38,7 +38,7 @@ func (m *mockExtractor) Extract(data []byte) (string, error) {
 
 func setupContractTestDB() *repositories.ContractRepository {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{})
+	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
 	return repositories.NewContractRepository(db)
 }
 
@@ -222,4 +222,46 @@ func TestActivity(t *testing.T) {
 	assert.NoError(t, err)
 	// Deve ter o upload do contrato e a mensagem no chat
 	assert.GreaterOrEqual(t, len(activities), 2)
+}
+
+func TestAddNote(t *testing.T) {
+	repo := setupContractTestDB()
+	user := &models.User{Name: "Test User", Email: "test@example.com"}
+	repo.CreateUser(user)
+	
+	contract := &models.Contract{UserID: user.ID, Slug: "c1", Filename: "test.pdf"}
+	repo.Create(contract)
+	
+	service := NewContractService(repo, nil, nil)
+	note, err := service.AddNote(user.ID, "c1", "Minha nota", "Texto selecionado", "yellow")
+	
+	assert.NoError(t, err)
+	assert.NotNil(t, note)
+	assert.Equal(t, "Minha nota", note.Content)
+	assert.Equal(t, "yellow", note.Color)
+	
+	// Verificar se foi preloada no contrato
+	c, _ := repo.GetBySlug("c1", user.ID)
+	assert.Len(t, c.Notes, 1)
+}
+
+func TestRemoveNote(t *testing.T) {
+	repo := setupContractTestDB()
+	user := &models.User{Name: "Test User", Email: "test@example.com"}
+	repo.CreateUser(user)
+	
+	contract := &models.Contract{UserID: user.ID, Slug: "c1", Filename: "test.pdf"}
+	repo.Create(contract)
+	
+	note := &models.Note{ContractID: contract.ID, Content: "Nota para deletar"}
+	repo.CreateNote(note)
+	
+	service := NewContractService(repo, nil, nil)
+	err := service.RemoveNote(note.ID, user.ID)
+	
+	assert.NoError(t, err)
+	
+	// Verificar se sumiu
+	c, _ := repo.GetBySlug("c1", user.ID)
+	assert.Len(t, c.Notes, 0)
 }

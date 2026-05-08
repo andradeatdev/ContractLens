@@ -19,14 +19,30 @@ func (r *ContractRepository) Create(contract *models.Contract) error {
 
 func (r *ContractRepository) GetByID(id uint, userID uint) (*models.Contract, error) {
 	var contract models.Contract
-	err := r.db.Preload("Risks").Preload("Messages").Where("id = ? AND user_id = ?", id, userID).First(&contract).Error
+	err := r.db.Preload("Risks").Preload("Messages").Preload("Notes").Where("id = ? AND user_id = ?", id, userID).First(&contract).Error
 	return &contract, err
 }
 
 func (r *ContractRepository) GetBySlug(slug string, userID uint) (*models.Contract, error) {
 	var contract models.Contract
-	err := r.db.Preload("Risks").Preload("Messages").Where("slug = ? AND user_id = ?", slug, userID).First(&contract).Error
+	err := r.db.Preload("Risks").Preload("Messages").Preload("Notes").Where("slug = ? AND user_id = ?", slug, userID).First(&contract).Error
 	return &contract, err
+}
+
+func (r *ContractRepository) CreateNote(note *models.Note) error {
+	return r.db.Create(note).Error
+}
+
+func (r *ContractRepository) DeleteNote(id uint, userID uint) error {
+	// Verifica se a nota pertence a um contrato do usuário
+	var note models.Note
+	err := r.db.Joins("JOIN contracts ON contracts.id = notes.contract_id").
+		Where("notes.id = ? AND contracts.user_id = ?", id, userID).
+		First(&note).Error
+	if err != nil {
+		return err
+	}
+	return r.db.Delete(&note).Error
 }
 
 func (r *ContractRepository) IsSlugTaken(slug string) bool {

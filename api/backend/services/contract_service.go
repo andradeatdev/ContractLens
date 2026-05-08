@@ -274,6 +274,32 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 	return answer, nil
 }
 
+func (s *ContractService) AddNote(userID uint, contractSlug string, content string, selectedText string, color string) (*models.Note, error) {
+	// 1. Buscar contrato pelo slug (verificando dono)
+	contract, err := s.repo.GetBySlug(contractSlug, userID)
+	if err != nil {
+		return nil, fmt.Errorf("Contrato não encontrado: %w", err)
+	}
+
+	// 2. Criar nota
+	note := &models.Note{
+		ContractID:   contract.ID,
+		Content:      content,
+		SelectedText: selectedText,
+		Color:        color,
+	}
+
+	if err := s.repo.CreateNote(note); err != nil {
+		return nil, fmt.Errorf("Falha ao salvar nota: %w", err)
+	}
+
+	return note, nil
+}
+
+func (s *ContractService) RemoveNote(id uint, userID uint) error {
+	return s.repo.DeleteNote(id, userID)
+}
+
 func (s *ContractService) ListContracts(userID uint) ([]models.Contract, error) {
 	return s.repo.List(userID)
 }

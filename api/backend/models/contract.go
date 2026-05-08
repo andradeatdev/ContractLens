@@ -20,6 +20,17 @@ type Contract struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	Risks     []Risk         `json:"risks"`
 	Messages  []ChatMessage  `json:"messages"`
+	Notes     []Note         `json:"notes"`
+}
+
+type Note struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	ContractID   uint      `gorm:"index" json:"contract_id"`
+	Content      string    `gorm:"type:text" json:"content"`
+	SelectedText string    `gorm:"type:text" json:"selected_text"`
+	Color        string    `json:"color"` // yellow, red, green, blue
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type Risk struct {

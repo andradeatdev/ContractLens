@@ -34,7 +34,7 @@ func NewApp() http.Handler {
 	}
 
 	// 2. Auto Migração
-	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{})
+	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
 
 	// 3. Injeção de Dependências
 	contractRepo := repositories.NewContractRepository(db)
@@ -90,7 +90,17 @@ func NewApp() http.Handler {
 			return
 		}
 
+		if r.URL.Path == "/contracts/notes" && r.Method == http.MethodPost {
+			contractHandler.CreateNote(w, r)
+			return
+		}
+
 		var id uint
+		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/notes/%d", &id); err == nil {
+			contractHandler.DeleteNote(w, r, id)
+			return
+		}
+
 		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/download", &id); err == nil {
 			contractHandler.Download(w, r, id)
 			return
