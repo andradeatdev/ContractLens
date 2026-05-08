@@ -35,7 +35,12 @@ func NewApp() http.Handler {
 	}
 
 	// 2. Auto Migração
-	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
+	err = db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
+	if err != nil {
+		log.Printf("ERRO CRÍTICO na migração do banco: %v", err)
+	} else {
+		log.Println("Migração do banco de dados concluída com sucesso")
+	}
 
 	// 3. Injeção de Dependências (Arquitetura Hexagonal)
 	// 3.1 Adaptador de Banco de Dados
