@@ -14,8 +14,9 @@ import (
 )
 
 type AnalysisResult struct {
-	Summary string `json:"summary"`
-	Risks   []struct {
+	IsContract bool   `json:"is_contract"`
+	Summary    string `json:"summary"`
+	Risks      []struct {
 		Title       string `json:"title"`
 		Severity    string `json:"severity"`
 		Explanation string `json:"explanation"`
@@ -37,10 +38,14 @@ func AnalyzeContract(ctx context.Context, contractText string) (*AnalysisResult,
 
 	model := client.GenerativeModel("gemini-2.5-flash-lite")
 	
-	prompt := fmt.Sprintf(`Analise o seguinte contrato e forneça um resumo em linguagem simples e uma lista de riscos potenciais (cláusulas abusivas, multas altas, obrigações críticas).
+	prompt := fmt.Sprintf(`Você é um especialista jurídico. Sua tarefa é analisar o documento fornecido.
+Primeiro, determine se o documento é um contrato (ex: contrato de aluguel, termos de serviço, NDA, contrato de trabalho, contrato de prestação de serviços, etc.).
+Se NÃO for um contrato (ex: currículo, carta pessoal, código de programação, receita, poema), defina "is_contract" como false.
+
 Responda APENAS em formato JSON com a seguinte estrutura:
 {
-  "summary": "resumo aqui",
+  "is_contract": true|false,
+  "summary": "resumo aqui (ou aviso que não é um contrato)",
   "risks": [
     {
       "title": "título do risco",
@@ -51,7 +56,9 @@ Responda APENAS em formato JSON com a seguinte estrutura:
   ]
 }
 
-Texto do contrato:
+Se "is_contract" for false, o campo "summary" deve explicar brevemente por que não foi identificado como um contrato e o array "risks" deve ser vazio.
+
+Texto do documento:
 %s`, contractText)
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))

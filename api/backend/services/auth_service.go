@@ -1,13 +1,8 @@
 package services
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
 	"time"
 
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
@@ -16,14 +11,16 @@ import (
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 )
 
 type AuthService struct {
-	repo *repositories.ContractRepository
+	repo  repositories.Repository
+	email EmailSender
 }
 
-func NewAuthService(repo *repositories.ContractRepository) *AuthService {
-	return &AuthService{repo: repo}
+func NewAuthService(repo repositories.Repository, email EmailSender) *AuthService {
+	return &AuthService{repo: repo, email: email}
 }
 
 func (s *AuthService) Register(name, email, password string) (*models.User, error) {
@@ -62,7 +59,7 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 			return nil, err
 		}
 
-		s.sendVerificationEmail(existing.Email, existing.Name, otpCode)
+		s.email.SendVerificationEmail(existing.Email, existing.Name, otpCode)
 		return existing, nil
 	}
 
@@ -102,7 +99,7 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 	}
 
 	// Disparar envio de e-mail (Síncrono para garantir execução em ambientes Serverless)
-	s.sendVerificationEmail(user.Email, user.Name, otpCode)
+	s.email.SendVerificationEmail(user.Email, user.Name, otpCode)
 
 	return user, nil
 }
@@ -137,41 +134,8 @@ func (s *AuthService) ResendVerificationCode(email string) error {
 		return err
 	}
 
-	s.sendVerificationEmail(user.Email, user.Name, otpCode)
+	s.email.SendVerificationEmail(user.Email, user.Name, otpCode)
 	return nil
-}
-
-func (s *AuthService) sendVerificationEmail(email, name, token string) {
-	// Chamada para a API interna do Next.js
-	nextAppURL := os.Getenv("NEXT_PUBLIC_APP_URL")
-	if nextAppURL == "" {
-		// Fallback para desenvolvimento local se não houver env var
-		nextAppURL = "http://host.docker.internal:3000"
-	}
-
-	apiURL := fmt.Sprintf("%s/api/emails/verify", nextAppURL)
-	fmt.Printf("[AuthService] Tentando disparar e-mail via: %s\n", apiURL)
-
-	payload := map[string]string{
-		"email": email,
-		"name":  name,
-		"token": token,
-	}
-
-	body, _ := json.Marshal(payload)
-	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		fmt.Printf("[AuthService] ERRO CRÍTICO ao chamar API de e-mail: %v\n", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		fmt.Printf("[AuthService] API de e-mail retornou erro (%d): %s\n", resp.StatusCode, string(respBody))
-	} else {
-		fmt.Printf("[AuthService] Solicitação de envio de e-mail aceita com sucesso para: %s\n", email)
-	}
 }
 
 func (s *AuthService) VerifyEmail(email, code string) (string, error) {

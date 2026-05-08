@@ -11,6 +11,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type mockEmailSender struct {
+	sent bool
+}
+
+func (m *mockEmailSender) SendVerificationEmail(email, name, token string) error {
+	m.sent = true
+	return nil
+}
+
 func setupTestDB(t *testing.T) (*gorm.DB, *AuthService) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -19,8 +28,9 @@ func setupTestDB(t *testing.T) (*gorm.DB, *AuthService) {
 
 	db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{})
 
-	repo := repositories.NewContractRepository(db)
-	service := NewAuthService(repo)
+	repo := repositories.NewGormRepository(db)
+	mockEmail := &mockEmailSender{}
+	service := NewAuthService(repo, mockEmail)
 
 	return db, service
 }
@@ -100,11 +110,6 @@ func TestVerifyEmail(t *testing.T) {
 	email := "verify@example.com"
 	service.Register("User", email, "Pass123!")
 
-	// Para testar a verificação real precisaríamos gerar o código TOTP
-	// Mas como o AuthService já faz isso internamente e não expõe o código no retorno (apenas envia e-mail),
-	// vamos testar o cenário de falha e um cenário onde injetamos o código se possível.
-	// Nota: Em um teste real de unidade, poderíamos mockar a geração do código.
-
 	t.Run("Deve falhar com código inválido", func(t *testing.T) {
 		_, err := service.VerifyEmail(email, "123456")
 		assert.Error(t, err)
@@ -117,8 +122,6 @@ func TestVerifyEmail(t *testing.T) {
 	})
 	
 	t.Run("Deve verificar com sucesso usando Master Code em DEV", func(t *testing.T) {
-		// Mockando ambiente de DEV para permitir Master Code
-		// Nota: O código mestre 000000 está hardcoded no service.go para ENV != production
 		token, err := service.VerifyEmail(email, "000000")
 		assert.NoError(t, err)
 		assert.NotEmpty(t, token)

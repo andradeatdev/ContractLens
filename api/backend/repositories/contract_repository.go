@@ -5,35 +5,35 @@ import (
 	"gorm.io/gorm"
 )
 
-type ContractRepository struct {
+type GormRepository struct {
 	db *gorm.DB
 }
 
-func NewContractRepository(db *gorm.DB) *ContractRepository {
-	return &ContractRepository{db: db}
+func NewGormRepository(db *gorm.DB) *GormRepository {
+	return &GormRepository{db: db}
 }
 
-func (r *ContractRepository) Create(contract *models.Contract) error {
+func (r *GormRepository) Create(contract *models.Contract) error {
 	return r.db.Create(contract).Error
 }
 
-func (r *ContractRepository) GetByID(id uint, userID uint) (*models.Contract, error) {
+func (r *GormRepository) GetByID(id uint, userID uint) (*models.Contract, error) {
 	var contract models.Contract
 	err := r.db.Preload("Risks").Preload("Messages").Preload("Notes").Where("id = ? AND user_id = ?", id, userID).First(&contract).Error
 	return &contract, err
 }
 
-func (r *ContractRepository) GetBySlug(slug string, userID uint) (*models.Contract, error) {
+func (r *GormRepository) GetBySlug(slug string, userID uint) (*models.Contract, error) {
 	var contract models.Contract
 	err := r.db.Preload("Risks").Preload("Messages").Preload("Notes").Where("slug = ? AND user_id = ?", slug, userID).First(&contract).Error
 	return &contract, err
 }
 
-func (r *ContractRepository) CreateNote(note *models.Note) error {
+func (r *GormRepository) CreateNote(note *models.Note) error {
 	return r.db.Create(note).Error
 }
 
-func (r *ContractRepository) DeleteNote(id uint, userID uint) error {
+func (r *GormRepository) DeleteNote(id uint, userID uint) error {
 	// Verifica se a nota pertence a um contrato do usuário
 	var note models.Note
 	err := r.db.Joins("JOIN contracts ON contracts.id = notes.contract_id").
@@ -45,17 +45,17 @@ func (r *ContractRepository) DeleteNote(id uint, userID uint) error {
 	return r.db.Delete(&note).Error
 }
 
-func (r *ContractRepository) IsSlugTaken(slug string) bool {
+func (r *GormRepository) IsSlugTaken(slug string) bool {
 	var count int64
 	r.db.Model(&models.Contract{}).Where("slug = ?", slug).Count(&count)
 	return count > 0
 }
 
-func (r *ContractRepository) CreateMessage(message *models.ChatMessage) error {
+func (r *GormRepository) CreateMessage(message *models.ChatMessage) error {
 	return r.db.Create(message).Error
 }
 
-func (r *ContractRepository) GetMessagesByContractID(contractID uint, userID uint) ([]models.ChatMessage, error) {
+func (r *GormRepository) GetMessagesByContractID(contractID uint, userID uint) ([]models.ChatMessage, error) {
 	var messages []models.ChatMessage
 	// Primeiro verifica se o contrato pertence ao usuário
 	var count int64
@@ -68,13 +68,13 @@ func (r *ContractRepository) GetMessagesByContractID(contractID uint, userID uin
 	return messages, err
 }
 
-func (r *ContractRepository) List(userID uint) ([]models.Contract, error) {
+func (r *GormRepository) List(userID uint) ([]models.Contract, error) {
 	var contracts []models.Contract
 	err := r.db.Preload("Risks").Where("user_id = ?", userID).Order("created_at desc").Find(&contracts).Error
 	return contracts, err
 }
 
-func (r *ContractRepository) GetLatestMessages(userID uint, limit int) ([]models.ChatMessage, error) {
+func (r *GormRepository) GetLatestMessages(userID uint, limit int) ([]models.ChatMessage, error) {
 	var messages []models.ChatMessage
 	err := r.db.Joins("JOIN contracts ON contracts.id = chat_messages.contract_id").
 		Where("contracts.user_id = ?", userID).
@@ -84,7 +84,7 @@ func (r *ContractRepository) GetLatestMessages(userID uint, limit int) ([]models
 	return messages, err
 }
 
-func (r *ContractRepository) GetUser(id uint) (*models.User, error) {
+func (r *GormRepository) GetUser(id uint) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err
@@ -92,28 +92,28 @@ func (r *ContractRepository) GetUser(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *ContractRepository) UpdateUser(user *models.User) error {
+func (r *GormRepository) UpdateUser(user *models.User) error {
 	return r.db.Save(user).Error
 }
 
-func (r *ContractRepository) CreateUser(user *models.User) error {
+func (r *GormRepository) CreateUser(user *models.User) error {
 	return r.db.Create(user).Error
 }
 
-func (r *ContractRepository) Update(contract *models.Contract) error {
+func (r *GormRepository) Update(contract *models.Contract) error {
 	// O Update assume que o objeto já foi verificado (GetByID com userID)
 	return r.db.Save(contract).Error
 }
 
-func (r *ContractRepository) Delete(id uint, userID uint) error {
+func (r *GormRepository) Delete(id uint, userID uint) error {
 	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Contract{}).Error
 }
 
-func (r *ContractRepository) DeleteRisksByContractID(contractID uint) error {
+func (r *GormRepository) DeleteRisksByContractID(contractID uint) error {
 	return r.db.Where("contract_id = ?", contractID).Delete(&models.Risk{}).Error
 }
 
-func (r *ContractRepository) GetUserByEmail(email string) (*models.User, error) {
+func (r *GormRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (r *ContractRepository) GetUserByEmail(email string) (*models.User, error) 
 	return &user, nil
 }
 
-func (r *ContractRepository) GetUserByVerificationToken(token string) (*models.User, error) {
+func (r *GormRepository) GetUserByVerificationToken(token string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("verification_token = ?", token).First(&user).Error; err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (r *ContractRepository) GetUserByVerificationToken(token string) (*models.U
 	return &user, nil
 }
 
-func (r *ContractRepository) EnsureDefaultUser() error {
+func (r *GormRepository) EnsureDefaultUser() error {
 	var count int64
 	r.db.Model(&models.User{}).Count(&count)
 	if count == 0 {

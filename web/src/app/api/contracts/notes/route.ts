@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
   try {
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
-    const authHeader = request.headers.get("Authorization");
+    const token = (await cookies()).get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const response = await fetch(`${backendUrl}/contracts/notes`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        ...(authHeader ? { "Authorization": authHeader } : {})
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(body),
     });

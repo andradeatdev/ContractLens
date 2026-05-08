@@ -324,9 +324,17 @@ func (h *ContractHandler) Download(w http.ResponseWriter, r *http.Request, id ui
 		return
 	}
 
+	// 1. Obter dados usando o adapter via service
+	data, err := h.service.DownloadFile(r.Context(), contract.FilePath)
+	if err != nil {
+		log.Printf("Download error: %v", err)
+		SendJSONError(w, "Falha ao baixar arquivo", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Disposition", "attachment; filename="+contract.Filename)
 	w.Header().Set("Content-Type", "application/pdf")
-	http.ServeFile(w, r, contract.FilePath)
+	w.Write(data)
 }
 
 func (h *ContractHandler) GetUser(w http.ResponseWriter, r *http.Request) {

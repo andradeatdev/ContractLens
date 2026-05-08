@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/adapters"
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/handlers"
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
@@ -36,17 +37,37 @@ func NewApp() http.Handler {
 	// 2. Auto Migração
 	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
 
-	// 3. Injeção de Dependências
-	contractRepo := repositories.NewContractRepository(db)
+	// 3. Injeção de Dependências (Arquitetura Hexagonal)
+	// 3.1 Adaptador de Banco de Dados
+	contractRepo := repositories.NewGormRepository(db)
 	
 	if err := contractRepo.EnsureDefaultUser(); err != nil {
 		log.Printf("Erro ao criar usuário padrão: %v", err)
 	}
 
-	contractService := services.NewContractService(contractRepo, nil, nil)
+	// 3.2 Adaptador de Armazenamento
+	var storage services.FileStorage
+	blobToken := os.Getenv("BLOB_READ_WRITE_TOKEN")
+	if blobToken != "" {
+		storage = &services.VercelBlobAdapter{Token: blobToken}
+		log.Println("Usando Vercel Blob para armazenamento")
+	} else {
+		uploadDir := "uploads"
+		if os.Getenv("VERCEL") == "1" {
+			uploadDir = "/tmp/uploads"
+		}
+		storage = &services.LocalStorageAdapter{UploadDir: uploadDir}
+		log.Println("Usando armazenamento local em:", uploadDir)
+	}
+
+	// 3.3 Adaptador de E-mail
+	emailSender := &adapters.NextEmailAdapter{}
+
+	// 3.4 Serviços (Core) com Injeção de Dependência
+	contractService := services.NewContractService(contractRepo, nil, nil, storage)
 	contractHandler := handlers.NewContractHandler(contractService)
 
-	authService := services.NewAuthService(contractRepo)
+	authService := services.NewAuthService(contractRepo, emailSender)
 	authHandler := handlers.NewAuthHandler(authService)
 
 	// 4. Mux

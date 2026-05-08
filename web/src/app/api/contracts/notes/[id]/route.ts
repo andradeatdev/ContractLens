@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function DELETE(
   request: NextRequest,
@@ -7,12 +8,16 @@ export async function DELETE(
   try {
     const { id } = await params;
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
-    const authHeader = request.headers.get("Authorization");
+    const token = (await cookies()).get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const response = await fetch(`${backendUrl}/contracts/notes/${id}`, {
       method: "DELETE",
       headers: { 
-        ...(authHeader ? { "Authorization": authHeader } : {})
+        "Authorization": `Bearer ${token}`
       },
     });
 

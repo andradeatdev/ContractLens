@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -44,19 +43,23 @@ func (p *PDFExtractor) Extract(data []byte) (string, error) {
 }
 
 type ContractService struct {
-	repo      *repositories.ContractRepository
+	repo      repositories.Repository
 	ai        AIAnalyzer
 	extractor TextExtractor
+	storage   FileStorage
 }
 
-func NewContractService(repo *repositories.ContractRepository, analyzer AIAnalyzer, extractor TextExtractor) *ContractService {
+func NewContractService(repo repositories.Repository, analyzer AIAnalyzer, extractor TextExtractor, storage FileStorage) *ContractService {
 	if analyzer == nil {
 		analyzer = &GeminiAnalyzer{}
 	}
 	if extractor == nil {
 		extractor = &PDFExtractor{}
 	}
-	return &ContractService{repo: repo, ai: analyzer, extractor: extractor}
+	if storage == nil {
+		storage = &LocalStorageAdapter{UploadDir: "uploads"}
+	}
+	return &ContractService{repo: repo, ai: analyzer, extractor: extractor, storage: storage}
 }
 
 func (s *ContractService) GenerateSlugPublic(filename string) string {
@@ -96,23 +99,15 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
 	}
 
-	// 3. Salvar PDF no Disco (Abordagem Profissional)
-	uploadDir := "uploads"
-	// Na Vercel, o sistema de arquivos é read-only, exceto o diretório /tmp
-	if os.Getenv("VERCEL") == "1" {
-		uploadDir = "/tmp/uploads"
-	}
-	
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		return nil, fmt.Errorf("Falha ao criar diretório de documentos: %w", err)
+	// 2.1 Verificar se é um contrato
+	if !analysis.IsContract {
+		return nil, fmt.Errorf("O documento enviado não parece ser um contrato válido. %s", analysis.Summary)
 	}
 
-	// Gerar nome único para evitar sobrescrita
-	uniqueFilename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filename)
-	filePath := filepath.Join(uploadDir, uniqueFilename)
-
-	if err := os.WriteFile(filePath, pdfData, 0644); err != nil {
-		return nil, fmt.Errorf("Falha ao salvar PDF no disco: %w", err)
+	// 3. Salvar PDF usando o Adapter (Arquitetura Hexagonal)
+	filePath, err := s.storage.Upload(ctx, filename, pdfData)
+	if err != nil {
+		return nil, fmt.Errorf("Falha ao salvar PDF: %w", err)
 	}
 
 	// 4. Montar Modelo
@@ -149,8 +144,8 @@ func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID
 		return nil, fmt.Errorf("Contrato não encontrado: %w", err)
 	}
 
-	// 2. Ler arquivo original
-	pdfData, err := os.ReadFile(contract.FilePath)
+	// 2. Ler arquivo original usando o adapter
+	pdfData, err := s.storage.Download(ctx, contract.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("Falha ao ler arquivo original: %w", err)
 	}
@@ -165,6 +160,11 @@ func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID
 	analysis, err := s.ai.Analyze(ctx, text)
 	if err != nil {
 		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
+	}
+
+	// 4.1 Verificar se é um contrato
+	if !analysis.IsContract {
+		return nil, fmt.Errorf("O documento não foi reconhecido como um contrato na reanálise.")
 	}
 
 	// 5. Limpar riscos antigos
@@ -321,14 +321,18 @@ func (s *ContractService) UpdateContract(id uint, userID uint, filename string) 
 	return s.repo.Update(contract)
 }
 
+func (s *ContractService) DownloadFile(ctx context.Context, path string) ([]byte, error) {
+	return s.storage.Download(ctx, path)
+}
+
 func (s *ContractService) DeleteContract(id uint, userID uint) error {
 	contract, err := s.repo.GetByID(id, userID)
 	if err != nil {
 		return err
 	}
 	if contract.FilePath != "" {
-		// Remover arquivo físico ao excluir do banco
-		os.Remove(contract.FilePath)
+		// Remover arquivo usando o adapter
+		s.storage.Delete(context.Background(), contract.FilePath)
 	}
 	return s.repo.Delete(id, userID)
 }
