@@ -17,8 +17,8 @@ if [[ -n $(git status -s) ]]; then
 fi
 
 # 2. Executar Testes Automatizados
-"$(dirname "$0")/test-backend.sh" || exit 1
-"$(dirname "$0")/test-frontend.sh" || exit 1
+"$SCRIPTS_DIR/test-backend.sh" || exit 1
+"$SCRIPTS_DIR/test-frontend.sh" || exit 1
 
 # 3. Push para o GitHub
 log_info "Realizando Push para o GitHub..."
@@ -30,8 +30,8 @@ else
 fi
 
 # 4. Deploys
-"$(dirname "$0")/deploy-api.sh" || exit 1
-"$(dirname "$0")/deploy-web.sh" || exit 1
+"$SCRIPTS_DIR/deploy-api.sh" || exit 1
+"$SCRIPTS_DIR/deploy-web.sh" || exit 1
 
 log_success "Sincronização finalizada com sucesso!"
 echo -e "API: ${BLUE}https://contract-lens-api-beta.vercel.app${NC}"

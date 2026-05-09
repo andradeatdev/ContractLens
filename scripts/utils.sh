@@ -2,6 +2,7 @@
 
 # Navegar para a raiz do projeto para garantir que os caminhos funcionem independente de onde o script for chamado
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 cd "$PROJECT_ROOT" || exit 1
 
 # Cores para o terminal
