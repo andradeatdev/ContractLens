@@ -31,18 +31,20 @@ func NewApp() http.Handler {
 			"password=" + os.Getenv("DB_PASSWORD"),
 			"dbname=" + os.Getenv("DB_NAME"),
 			"port=" + os.Getenv("DB_PORT"),
-			"sslmode=disable",
+			"sslmode=require",
 		}
 		dsn = strings.Join(parts, " ")
 	}
 
+	log.Printf("Conectando ao banco de dados...")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Não foi possível conectar ao banco de dados:", err)
 	}
 
 	// 2. Auto Migração
-	err = db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
+	log.Println("Iniciando AutoMigrate para as tabelas...")
+	err = db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{})
 	if err != nil {
 		log.Printf("ERRO CRÍTICO na migração do banco: %v", err)
 	} else {
