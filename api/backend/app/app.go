@@ -20,13 +20,20 @@ func NewApp() http.Handler {
 	// 1. Conexão com DB
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-			os.Getenv("DB_HOST"),
-			os.Getenv("DB_USER"),
-			os.Getenv("DB_PASSWORD"),
-			os.Getenv("DB_NAME"),
-			os.Getenv("DB_PORT"),
-		)
+		dsn = os.Getenv("POSTGRES_URL")
+	}
+
+	if dsn == "" {
+		// Construção segura sem fmt.Sprintf para evitar problemas com caracteres especiais (ex: %)
+		parts := []string{
+			"host=" + os.Getenv("DB_HOST"),
+			"user=" + os.Getenv("DB_USER"),
+			"password=" + os.Getenv("DB_PASSWORD"),
+			"dbname=" + os.Getenv("DB_NAME"),
+			"port=" + os.Getenv("DB_PORT"),
+			"sslmode=disable",
+		}
+		dsn = strings.Join(parts, " ")
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

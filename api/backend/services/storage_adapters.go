@@ -57,7 +57,7 @@ func (a *VercelBlobAdapter) Upload(ctx context.Context, filename string, data []
 
 	req.Header.Set("Authorization", "Bearer "+a.Token)
 	req.Header.Set("x-api-version", "1")
-	req.Header.Set("x-access", "private")
+	req.Header.Set("x-vercel-access", "private")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
