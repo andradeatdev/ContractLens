@@ -221,9 +221,9 @@ export default function DashboardPage() {
 
                         <div className={cn(
                           "bg-primary/10 p-6 rounded-[2rem] w-fit mx-auto mb-8 transition-transform duration-500",
-                          file ? "rotate-12 bg-primary text-white" : ""
+                          file ? "rotate-12 bg-primary" : ""
                         )}>
-                          <Upload className={cn("h-12 w-12", !file && "text-primary")} />
+                          <Upload className={cn("h-12 w-12", file ? "text-primary-foreground" : "text-primary")} />
                         </div>
 
                         <input
