@@ -89,7 +89,29 @@ Texto do documento:
 	return &analysis, nil
 }
 
-func ChatWithContract(ctx context.Context, contractContent string, history []models.ChatMessage, question string) (string, error) {
+func GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY not set")
+	}
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = client.Close() }()
+
+	// Usa o modelo de embedding mais recente e otimizado
+	model := client.EmbeddingModel("text-embedding-004")
+	res, err := model.EmbedContent(ctx, genai.Text(text))
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Embedding.Values, nil
+}
+
+func ChatWithContract(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error) {
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
 		return "", fmt.Errorf("GEMINI_API_KEY not set")
@@ -103,16 +125,17 @@ func ChatWithContract(ctx context.Context, contractContent string, history []mod
 
 	model := client.GenerativeModel("gemini-2.5-flash-lite")
 
-	// Adicionar contexto do contrato como instrução de sistema ou mensagem inicial
+	// Adicionar contexto recuperado (RAG)
+	contextContent := strings.Join(contextChunks, "\n---\n")
 	systemPrompt := fmt.Sprintf(`Você é um assistente jurídico especializado em analisar contratos. 
 DIRETRIZES RÍGIDAS DE SEGURANÇA E ESCOPO:
-1. Use APENAS o conteúdo do contrato abaixo como base para suas respostas.
+1. Use APENAS os trechos relevantes do contrato abaixo como base para suas respostas.
 2. Você deve responder EXCLUSIVAMENTE sobre temas relacionados a este contrato (cláusulas, obrigações, riscos, prazos, etc.).
 3. Se o usuário fizer perguntas fora do contexto do contrato (ex: contar números, piadas, conhecimentos gerais, programação, etc.), responda educadamente que você foi projetado apenas para analisar este contrato específico e não pode responder a outros temas.
 4. Nunca saia do personagem de assistente de análise contratual.
 
-CONTEÚDO DO CONTRATO:
-%s`, contractContent)
+TRECHOS RELEVANTES DO CONTRATO RECUPERADOS:
+%s`, contextContent)
 
 	finalPrompt := fmt.Sprintf("%s\n\nHistórico de conversa:\n", systemPrompt)
 	for _, msg := range history {

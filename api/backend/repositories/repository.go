@@ -16,6 +16,11 @@ type Repository interface {
 	// Riscos
 	DeleteRisksByContractID(contractID uint) error
 
+	// Chunks (RAG)
+	CreateChunks(chunks []models.DocumentChunk) error
+	DeleteChunksByContractID(contractID uint) error
+	SearchSimilarChunks(contractID uint, embedding []float32, limit int) ([]models.DocumentChunk, error)
+
 	// Notas
 	CreateNote(note *models.Note) error
 	DeleteNote(id uint, userID uint) error

@@ -61,7 +61,12 @@ func initDB() *gorm.DB {
 		log.Fatal("Não foi possível conectar ao banco de dados:", err)
 	}
 
-	if err := db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{}); err != nil {
+	// Habilita a extensão pgvector se estiver usando Postgres
+	if os.Getenv("DATABASE_URL") != "" || os.Getenv("POSTGRES_URL") != "" {
+		db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	}
+
+	if err := db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{}, &models.DocumentChunk{}); err != nil {
 		log.Printf("ERRO na migração do banco: %v", err)
 	}
 

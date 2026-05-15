@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type GormRepository struct {
@@ -111,6 +113,32 @@ func (r *GormRepository) Delete(id uint, userID uint) error {
 
 func (r *GormRepository) DeleteRisksByContractID(contractID uint) error {
 	return r.db.Where("contract_id = ?", contractID).Delete(&models.Risk{}).Error
+}
+
+func (r *GormRepository) CreateChunks(chunks []models.DocumentChunk) error {
+	if len(chunks) == 0 {
+		return nil
+	}
+	return r.db.Create(&chunks).Error
+}
+
+func (r *GormRepository) DeleteChunksByContractID(contractID uint) error {
+	return r.db.Where("contract_id = ?", contractID).Delete(&models.DocumentChunk{}).Error
+}
+
+func (r *GormRepository) SearchSimilarChunks(contractID uint, embedding []float32, limit int) ([]models.DocumentChunk, error) {
+	var chunks []models.DocumentChunk
+	
+	// Busca vetorial usando distância de cosseno (oposto de similaridade)
+	// O operador '<=>' no pgvector representa a distância de cosseno.
+	err := r.db.Where("contract_id = ?", contractID).
+		Clauses(clause.OrderBy{
+			Expression: clause.Expr{SQL: "embedding <=> ?", Vars: []interface{}{pgvector.NewVector(embedding)}},
+		}).
+		Limit(limit).
+		Find(&chunks).Error
+		
+	return chunks, err
 }
 
 func (r *GormRepository) GetUserByEmail(email string) (*models.User, error) {

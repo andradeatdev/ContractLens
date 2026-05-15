@@ -16,13 +16,15 @@ import (
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/ai"
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/pdf"
+	"github.com/pgvector/pgvector-go"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 type AIAnalyzer interface {
 	Analyze(ctx context.Context, text string) (*ai.AnalysisResult, error)
-	Chat(ctx context.Context, content string, history []models.ChatMessage, question string) (string, error)
+	Chat(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error)
+	GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
 }
 
 type GeminiAnalyzer struct{}
@@ -31,8 +33,12 @@ func (g *GeminiAnalyzer) Analyze(ctx context.Context, text string) (*ai.Analysis
 	return ai.AnalyzeContract(ctx, text)
 }
 
-func (g *GeminiAnalyzer) Chat(ctx context.Context, content string, history []models.ChatMessage, question string) (string, error) {
-	return ai.ChatWithContract(ctx, content, history, question)
+func (g *GeminiAnalyzer) Chat(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error) {
+	return ai.ChatWithContract(ctx, contextChunks, history, question)
+}
+
+func (g *GeminiAnalyzer) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	return ai.GenerateEmbedding(ctx, text)
 }
 
 type TextExtractor interface {
@@ -144,7 +150,53 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 		return nil, fmt.Errorf("Erro no repositório: %w", err)
 	}
 
+	// 6. Processar Chunks para RAG
+	go s.processChunks(context.Background(), contract.ID, text)
+
 	return contract, nil
+}
+
+func (s *ContractService) processChunks(ctx context.Context, contractID uint, text string) {
+	chunks := s.chunkText(text, 1000, 200)
+	var documentChunks []models.DocumentChunk
+
+	for _, content := range chunks {
+		embedding, err := s.ai.GenerateEmbedding(ctx, content)
+		if err != nil {
+			log.Printf("Warning: Falha ao gerar embedding para chunk: %v", err)
+			continue
+		}
+
+		documentChunks = append(documentChunks, models.DocumentChunk{
+			ContractID: contractID,
+			Content:    content,
+			Embedding:  pgvector.NewVector(embedding),
+		})
+	}
+
+	if err := s.repo.CreateChunks(documentChunks); err != nil {
+		log.Printf("Error: Falha ao salvar chunks no banco: %v", err)
+	}
+}
+
+func (s *ContractService) chunkText(text string, chunkSize int, overlap int) []string {
+	var chunks []string
+	if len(text) == 0 {
+		return chunks
+	}
+
+	// Simplificação: quebra por caracteres (em produção, tokens seriam ideais)
+	for i := 0; i < len(text); i += chunkSize - overlap {
+		end := i + chunkSize
+		if end > len(text) {
+			end = len(text)
+		}
+		chunks = append(chunks, text[i:end])
+		if end == len(text) {
+			break
+		}
+	}
+	return chunks
 }
 
 func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID uint) (*models.Contract, error) {
@@ -177,9 +229,12 @@ func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID
 		return nil, fmt.Errorf("O documento não foi reconhecido como um contrato na reanálise.")
 	}
 
-	// 5. Limpar riscos antigos
+	// 5. Limpar riscos e chunks antigos
 	if err := s.repo.DeleteRisksByContractID(contract.ID); err != nil {
 		return nil, fmt.Errorf("Erro ao limpar riscos antigos: %w", err)
+	}
+	if err := s.repo.DeleteChunksByContractID(contract.ID); err != nil {
+		log.Printf("Warning: Falha ao limpar chunks antigos: %v", err)
 	}
 
 	// 6. Atualizar Modelo
@@ -201,6 +256,9 @@ func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID
 	if err := s.repo.Update(contract); err != nil {
 		return nil, fmt.Errorf("Erro ao salvar atualização: %w", err)
 	}
+
+	// 8. Processar novos Chunks para RAG
+	go s.processChunks(context.Background(), contract.ID, text)
 
 	return contract, nil
 }
@@ -269,13 +327,34 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 		log.Printf("Warning: Falha ao salvar mensagem do usuário: %v", err)
 	}
 
-	// 4. Chamar IA
-	answer, err := s.ai.Chat(ctx, contract.Content, history, question)
+	// 4. RAG: Gerar embedding da pergunta e buscar trechos relevantes
+	questionEmbedding, err := s.ai.GenerateEmbedding(ctx, question)
+	if err != nil {
+		return "", fmt.Errorf("Erro ao gerar embedding da pergunta: %w", err)
+	}
+
+	similarChunks, err := s.repo.SearchSimilarChunks(contract.ID, questionEmbedding, 5)
+	if err != nil {
+		log.Printf("Warning: Falha na busca semântica, usando conteúdo total como fallback: %v", err)
+	}
+
+	var contextChunks []string
+	if len(similarChunks) > 0 {
+		for _, chunk := range similarChunks {
+			contextChunks = append(contextChunks, chunk.Content)
+		}
+	} else {
+		// Fallback se não houver chunks (contrato pequeno ou erro no processamento anterior)
+		contextChunks = []string{contract.Content}
+	}
+
+	// 5. Chamar IA com o contexto recuperado
+	answer, err := s.ai.Chat(ctx, contextChunks, history, question)
 	if err != nil {
 		return "", fmt.Errorf("Erro no chat com IA: %w", err)
 	}
 
-	// 5. Salvar resposta da IA
+	// 6. Salvar resposta da IA
 	aiMsg := &models.ChatMessage{
 		ContractID: contract.ID,
 		Role:       "assistant",

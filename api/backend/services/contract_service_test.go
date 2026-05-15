@@ -21,8 +21,12 @@ func (m *mockAI) Analyze(ctx context.Context, text string) (*ai.AnalysisResult, 
 	return m.result, m.err
 }
 
-func (m *mockAI) Chat(ctx context.Context, content string, history []models.ChatMessage, question string) (string, error) {
+func (m *mockAI) Chat(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error) {
 	return "Resposta mock para: " + question, nil
+}
+
+func (m *mockAI) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	return make([]float32, 768), nil
 }
 
 type mockExtractor struct {
@@ -53,7 +57,7 @@ func (m *mockStorage) Delete(ctx context.Context, path string) error {
 
 func setupContractTestDB() repositories.Repository {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	_ = db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
+	_ = db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{}, &models.DocumentChunk{})
 	return repositories.NewGormRepository(db)
 }
 
