@@ -31,6 +31,10 @@ export interface Contract {
   content: string;
   created_at: string;
   risks: ContractRisk[];
+  total_value?: string;
+  expiration?: string;
+  parties?: string;
+  legal_venue?: string;
 }
 
 export interface FullContract extends Contract {
@@ -58,6 +62,10 @@ export interface AnalysisResult {
   content: string;
   risks: ContractRisk[];
   summary: string;
+  total_value?: string;
+  expiration?: string;
+  parties?: string;
+  legal_venue?: string;
   messages?: Message[];
   notes?: Note[];
 }

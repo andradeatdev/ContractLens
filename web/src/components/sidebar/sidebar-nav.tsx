@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { GlobalSearch } from "@/app/dashboard/components/global-search";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -30,6 +31,8 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
   return (
     <SidebarContent className={cn("px-4 transition-all", isCollapsed ? "px-2" : "px-4")}>
       <SidebarMenu className="gap-1">
+        <GlobalSearch />
+        
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.href}>
             <SidebarMenuButton

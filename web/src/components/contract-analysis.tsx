@@ -231,8 +231,13 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
 
           <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 m-0">
             <ContractOverview 
+              id={analysis.id}
               filename={analysis.filename}
               summary={analysis.summary}
+              total_value={analysis.total_value}
+              expiration={analysis.expiration}
+              parties={analysis.parties}
+              legal_venue={analysis.legal_venue}
               isViewOnly={isViewOnly}
               onDelete={() => deleteContractMutation.mutate()}
             />
