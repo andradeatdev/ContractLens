@@ -5,8 +5,19 @@ log_info "Iniciando Auditoria de Segurança..."
 
 # 1. Escaneamento de Código (SAST)
 log_info "Executando Security Scanner (SAST)..."
-python3 .agents/skills/senior-secops/scripts/security_scanner.py . --severity high
-SAST_STATUS=$?
+log_info "Verificando API..."
+python3 .agents/skills/senior-secops/scripts/security_scanner.py ./api --severity high
+SAST_API_STATUS=$?
+
+log_info "Verificando Web..."
+python3 .agents/skills/senior-secops/scripts/security_scanner.py ./web --severity high
+SAST_WEB_STATUS=$?
+
+if [ $SAST_API_STATUS -eq 0 ] && [ $SAST_WEB_STATUS -eq 0 ]; then
+    SAST_STATUS=0
+else
+    SAST_STATUS=1
+fi
 
 # 2. Auditoria de Dependências (CVEs)
 log_info "Executando Vulnerability Assessor (Dependências)..."

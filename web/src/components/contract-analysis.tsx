@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
-import { AnalysisResult } from "@/types";
+import { AnalysisResult, Message, Note } from "@/types";
 
 // Refactored sub-components
 import { ContractOverview } from "./contract-analysis/overview";
@@ -30,20 +30,6 @@ import { ContractPdfViewer } from "./contract-analysis/pdf-viewer";
 import { ContractChat } from "./contract-analysis/chat";
 import { ContractNotes } from "./contract-analysis/notes";
 import { SelectionPopover } from "./contract-analysis/selection-popover";
-
-interface Message {
-  role: 'user' | 'assistant';
-  message: string;
-}
-
-interface Note {
-  id: number;
-  contract_id: number;
-  content: string;
-  selected_text: string;
-  color: string;
-  created_at: string;
-}
 
 interface ContractAnalysisProps {
   analysis: AnalysisResult & { 
@@ -101,7 +87,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
     setInput("");
     setChatDraft(analysis.slug, "");
     
-    const newMessages = [...messages, { role: "user", message: userMessage }];
+    const newMessages: Message[] = [...messages, { role: "user", message: userMessage }];
     setMessages(newMessages);
     setChatLoading(true);
 

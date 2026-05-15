@@ -26,6 +26,7 @@ interface ModalOptions {
   confirmLabel?: string;
   cancelLabel?: string;
   placeholder?: string;
+  defaultValue?: string;
 }
 
 interface ModalContextType {
@@ -60,7 +61,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setOptions(opts);
     setModalType("prompt");
     setIsOpen(true);
-    setInputValue("");
+    setInputValue(opts.defaultValue || "");
   };
 
   const closeModal = () => {

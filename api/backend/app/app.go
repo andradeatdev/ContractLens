@@ -45,15 +45,13 @@ func initDB() *gorm.DB {
 	}
 
 	if dsn == "" {
-		parts := []string{
-			"host=" + os.Getenv("DB_HOST"),
-			"user=" + os.Getenv("DB_USER"),
-			"password=" + os.Getenv("DB_PASSWORD"),
-			"dbname=" + os.Getenv("DB_NAME"),
-			"port=" + os.Getenv("DB_PORT"),
-			"sslmode=require",
-		}
-		dsn = strings.Join(parts, " ")
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
+			os.Getenv("DB_HOST"),
+			os.Getenv("DB_USER"),
+			os.Getenv("DB_PASSWORD"),
+			os.Getenv("DB_NAME"),
+			os.Getenv("DB_PORT"),
+		)
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

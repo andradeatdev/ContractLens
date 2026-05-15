@@ -10,13 +10,33 @@ export interface ContractRisk {
   impact: string;
 }
 
+export interface Message {
+  role: 'user' | 'assistant';
+  message: string;
+}
+
+export interface Note {
+  id: number;
+  contract_id: number;
+  content: string;
+  selected_text: string;
+  color: string;
+  created_at: string;
+}
+
 export interface Contract {
   id: number;
   filename: string;
   slug: string;
   content: string;
   created_at: string;
-  risks?: ContractRisk[];
+  risks: ContractRisk[];
+}
+
+export interface FullContract extends Contract {
+  messages?: Message[];
+  notes?: Note[];
+  summary: string;
 }
 
 export interface Activity {
@@ -32,8 +52,12 @@ export interface Stats {
 }
 
 export interface AnalysisResult {
+  id: number;
+  slug: string;
   filename: string;
   content: string;
-  risks: Omit<ContractRisk, "id" | "contract_id">[];
+  risks: ContractRisk[];
   summary: string;
+  messages?: Message[];
+  notes?: Note[];
 }
