@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -17,6 +15,7 @@ services:
   api:
     build:
       context: ./api
+      target: dev
     container_name: contract-analyzer-api
     ports:
       - "8080:8080"
@@ -28,8 +27,9 @@ services:
       DB_USER: user
       DB_PASSWORD: password
       DB_NAME: contract_analyzer
+      INTERNAL_WEB_URL: http://web:3000
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      NEXT_PUBLIC_APP_URL: http://host.docker.internal:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
     extra_hosts:
       - "host.docker.internal:host-gateway"
     develop:
@@ -44,6 +44,24 @@ services:
     volumes:
       - ./api:/app
       - /app/tmp
+
+  web:
+    build:
+      context: ./web
+      target: dev
+    container_name: contract-analyzer-web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      BACKEND_URL: http://api:8080
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
 
 volumes:
   postgres_data:

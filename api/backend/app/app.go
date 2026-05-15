@@ -45,12 +45,17 @@ func initDB() *gorm.DB {
 	}
 
 	if dsn == "" {
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
+		sslmode := os.Getenv("DB_SSLMODE")
+		if sslmode == "" {
+			sslmode = "disable"
+		}
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 			os.Getenv("DB_HOST"),
 			os.Getenv("DB_USER"),
 			os.Getenv("DB_PASSWORD"),
 			os.Getenv("DB_NAME"),
 			os.Getenv("DB_PORT"),
+			sslmode,
 		)
 	}
 
@@ -99,6 +104,8 @@ func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *ha
 
 	// Protegidas
 	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contract.Upload)))
+	mux.HandleFunc("/contracts/compare", corsMiddleware(handlers.AuthMiddleware(contract.Compare)))
+	mux.HandleFunc("/search", corsMiddleware(handlers.AuthMiddleware(contract.Search)))
 	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contract.Chat)))
 	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contract.Activity)))
 	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contract.Stats)))

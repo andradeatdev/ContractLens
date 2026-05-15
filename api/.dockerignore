@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+vendor/
+tmp/
+bin/
+*.exe
+*.test
+*.out
+.env
+Dockerfile
+Dockerfile.*
+docker-compose*
+README.md

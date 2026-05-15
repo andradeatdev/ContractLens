@@ -13,7 +13,10 @@ import (
 type NextEmailAdapter struct{}
 
 func (a *NextEmailAdapter) SendVerificationEmail(email, name, token string) error {
-	nextAppURL := os.Getenv("NEXT_PUBLIC_APP_URL")
+	nextAppURL := os.Getenv("INTERNAL_WEB_URL")
+	if nextAppURL == "" {
+		nextAppURL = os.Getenv("NEXT_PUBLIC_APP_URL")
+	}
 	if nextAppURL == "" {
 		nextAppURL = "http://host.docker.internal:3000"
 	}
