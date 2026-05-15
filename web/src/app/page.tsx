@@ -26,7 +26,7 @@ export default function LandingPage() {
                 className="mb-8"
               >
                 <Badge variant="secondary" className="px-4 py-1.5 rounded-full bg-primary/10 text-primary border-primary/20 gap-2 font-bold shadow-sm">
-                  <Zap className="h-3 w-3 fill-current" />
+                  <Zap className="h-3 w-3 fill-current" aria-hidden="true" />
                   <span>Análise 10× mais rápida</span>
                 </Badge>
               </motion.div>
@@ -62,7 +62,7 @@ export default function LandingPage() {
                 >
                   <Link href="/register">
                     Analisar meu contrato
-                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform ml-2" />
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform ml-2" aria-hidden="true" />
                   </Link>
                 </Button>
                 <Button
@@ -97,19 +97,19 @@ export default function LandingPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <FeatureCard 
-                icon={<Search className="h-8 w-8 text-primary" />}
+                icon={<Search className="h-8 w-8 text-primary" aria-hidden="true" />}
                 title="Olhar clínico para riscos"
                 description="Identificamos na hora multas abusivas ou obrigações ocultas que podem prejudicar seu negócio."
                 delay={0.1}
               />
               <FeatureCard 
-                icon={<FileText className="h-8 w-8 text-primary" />}
+                icon={<FileText className="h-8 w-8 text-primary" aria-hidden="true" />}
                 title="Resumo direto ao ponto"
                 description="Esqueça o juridiquês. Traduzimos tudo para uma linguagem humana e fácil de entender."
                 delay={0.2}
               />
               <FeatureCard 
-                icon={<MessageSquare className="h-8 w-8 text-primary" />}
+                icon={<MessageSquare className="h-8 w-8 text-primary" aria-hidden="true" />}
                 title="Tire suas dúvidas na hora"
                 description="Converse com nosso assistente para entender detalhes específicos ou pedir dicas de negociação."
                 delay={0.3}
@@ -147,7 +147,7 @@ export default function LandingPage() {
                 <div className="relative aspect-square rounded-[3rem] overflow-hidden border border-border shadow-2xl bg-muted/20 group flex items-center justify-center">
                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                    <div className="relative p-12 bg-background/50 backdrop-blur-xl border border-white/10 rounded-full animate-float">
-                      <Shield className="h-32 w-32 text-primary drop-shadow-2xl" />
+                      <Shield className="h-32 w-32 text-primary drop-shadow-2xl" aria-hidden="true" />
                    </div>
                 </div>
                 {/* Decorative dots */}
@@ -196,7 +196,7 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
               <div className="space-y-6">
                 <div className="flex items-center gap-2">
-                  <Shield className="h-6 w-6 text-primary" />
+                  <Shield className="h-6 w-6 text-primary" aria-hidden="true" />
                   <span className="text-xl font-black tracking-tight uppercase">Contract<span className="text-primary">Lens</span></span>
                 </div>
                 <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
@@ -255,7 +255,7 @@ function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNod
       <Card className="p-0 rounded-[2.5rem] bg-background border-border shadow-sm hover:shadow-2xl hover:border-primary/20 transition-all duration-300 group relative overflow-hidden h-full">
         <CardContent className="p-10">
           <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-[0.03] transition-opacity">
-            <Shield className="h-40 w-40 rotate-12" />
+            <Shield className="h-40 w-40 rotate-12" aria-hidden="true" />
           </div>
           <div className="mb-8 p-4 rounded-2xl bg-primary/5 w-fit group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
             {icon}

@@ -89,6 +89,21 @@ go test ./api/backend/services/...
 cd web && pnpm test
 ```
 
+## 📈 Estratégia de Marketing & SEO
+
+O **Contract Lens** foi projetado com uma fundação estratégica focada em acessibilidade e confiabilidade.
+
+### 🎯 Posicionamento
+- **Voz da Marca:** Profissional, confiável e descomplicada. Transformamos "juridiquês" em linguagem clara para tomadores de decisão.
+- **Público-Alvo:** Pequenos empreendedores, freelancers e departamentos jurídicos que buscam agilidade na revisão de documentos.
+- **Diferencial:** Processamento ultra-rápido via Gemini 2.5 Flash Lite e interface focada em análise de risco visual.
+
+### 🔍 Otimização para Motores de Busca (SEO)
+Estamos focados nas seguintes palavras-chave e estratégias:
+- **Keywords Principais:** `Análise de contrato IA`, `Legal Tech Brasil`, `Revisão de contrato automática`, `Extração de dados PDF jurídico`.
+- **Estratégia de Conteúdo:** Foco em resolver a dor da "demora na revisão jurídica" e "riscos ocultos em letras miúdas".
+- **Acessibilidade:** Cumprimento rigoroso das normas WCAG 2.2 para garantir que a ferramenta seja inclusiva.
+
 ## 📄 Licença
 
 Este projeto está sob a licença [MIT](LICENSE).
