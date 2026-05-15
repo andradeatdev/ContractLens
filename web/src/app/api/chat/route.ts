@@ -23,7 +23,12 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: `Backend error: ${errorText}` }, { status: response.status });
+      try {
+        const errorJson = JSON.parse(errorText);
+        return NextResponse.json({ error: errorJson.error || errorJson.message || "Erro desconhecido no servidor" }, { status: response.status });
+      } catch {
+        return NextResponse.json({ error: `Erro no servidor: ${errorText}` }, { status: response.status });
+      }
     }
 
     const data = await response.json();
