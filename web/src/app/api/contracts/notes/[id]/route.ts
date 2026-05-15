@@ -29,8 +29,8 @@ export async function DELETE(
     }
 
     return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Delete Note error:", error);
-    return NextResponse.json({ error: `Erro interno: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Erro interno: ${(error as Error).message}` }, { status: 500 });
   }
 }

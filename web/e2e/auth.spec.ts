@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Fluxo de Autenticação', () => {
-  const randomEmail = `test-${Math.floor(Math.random() * 1000000)}@example.com`;
+  const randomEmail = `test-${Date.now().toString().slice(-6)}@example.com`;
 
   test('deve realizar o cadastro e verificação com sucesso', async ({ page }) => {
     // 1. Acessar página de registro

@@ -3,7 +3,6 @@ import { Resend } from "resend";
 import VerificationEmail from "@/emails/verification-email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,8 +33,8 @@ export async function POST(request: NextRequest) {
 
     console.log("[Email Service] E-mail enviado com sucesso via Resend:", data);
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Email Service] Erro interno:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

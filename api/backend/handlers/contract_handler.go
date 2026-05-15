@@ -45,7 +45,7 @@ func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	if header.Size > 10*1024*1024 {
 		SendJSONError(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
@@ -232,7 +232,7 @@ func (h *ContractHandler) ExportAnalysis(w http.ResponseWriter, r *http.Request,
 
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Header().Set("Content-Type", "text/markdown")
-	w.Write([]byte(content))
+	_, _ = w.Write([]byte(content))
 }
 
 func (h *ContractHandler) GetBySlug(w http.ResponseWriter, r *http.Request, slug string) {
@@ -334,7 +334,7 @@ func (h *ContractHandler) Download(w http.ResponseWriter, r *http.Request, id ui
 
 	w.Header().Set("Content-Disposition", "attachment; filename="+contract.Filename)
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 func (h *ContractHandler) GetUser(w http.ResponseWriter, r *http.Request) {

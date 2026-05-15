@@ -28,11 +28,12 @@ func (a *NextEmailAdapter) SendVerificationEmail(email, name, token string) erro
 	}
 
 	body, _ := json.Marshal(payload)
+	// #nosec G107 - apiURL is derived from a trusted environment variable
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("falha ao chamar API de e-mail: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() // Ignored as reading is done or failed
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)

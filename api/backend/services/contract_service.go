@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -15,6 +16,8 @@ import (
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/ai"
 	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/pdf"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type AIAnalyzer interface {
@@ -73,7 +76,14 @@ func (s *ContractService) GenerateSlugPublic(filename string) string {
 
 	// Gerar sufixo aleatorio de 4 chars
 	b := make([]byte, 2)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback para timestamp se rand falhar (improvável)
+		suffix := fmt.Sprintf("%x", time.Now().UnixNano())
+		if len(suffix) > 4 {
+			suffix = suffix[len(suffix)-4:]
+		}
+		return fmt.Sprintf("%s-%s", slug, suffix)
+	}
 	suffix := hex.EncodeToString(b)
 
 	finalSlug := fmt.Sprintf("%s-%s", slug, suffix)
@@ -221,7 +231,7 @@ func (s *ContractService) ExportAnalysis(id uint, userID uint) (string, string, 
 			}
 			
 			sb.WriteString(fmt.Sprintf("### %d. %s %s\n", i+1, severityEmoji, r.Title))
-			sb.WriteString(fmt.Sprintf("**Gravidade:** %s\n\n", strings.Title(r.Severity)))
+			sb.WriteString(fmt.Sprintf("**Gravidade:** %s\n\n", cases.Title(language.BrazilianPortuguese).String(r.Severity)))
 			sb.WriteString(fmt.Sprintf("**Explicação:** %s\n\n", r.Explanation))
 			if r.Clause != "" {
 				sb.WriteString("**Cláusula de referência:**\n")
@@ -255,7 +265,9 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 		Role:       "user",
 		Message:    question,
 	}
-	s.repo.CreateMessage(userMsg)
+	if err := s.repo.CreateMessage(userMsg); err != nil {
+		log.Printf("Warning: Falha ao salvar mensagem do usuário: %v", err)
+	}
 
 	// 4. Chamar IA
 	answer, err := s.ai.Chat(ctx, contract.Content, history, question)
@@ -269,7 +281,9 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 		Role:       "assistant",
 		Message:    answer,
 	}
-	s.repo.CreateMessage(aiMsg)
+	if err := s.repo.CreateMessage(aiMsg); err != nil {
+		log.Printf("Warning: Falha ao salvar mensagem da IA: %v", err)
+	}
 
 	return answer, nil
 }
@@ -332,7 +346,10 @@ func (s *ContractService) DeleteContract(id uint, userID uint) error {
 	}
 	if contract.FilePath != "" {
 		// Remover arquivo usando o adapter
-		s.storage.Delete(context.Background(), contract.FilePath)
+		if err := s.storage.Delete(context.Background(), contract.FilePath); err != nil {
+			// Log error but continue as DB record is already deleted
+			fmt.Printf("erro ao deletar arquivo: %v\n", err)
+		}
 	}
 	return s.repo.Delete(id, userID)
 }

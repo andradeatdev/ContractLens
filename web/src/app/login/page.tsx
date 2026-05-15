@@ -1,15 +1,9 @@
 "use client";
 
-import { useState, startTransition } from "react";
 import Link from "next/link";
 import { Shield, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
-import { useRouter } from "next/navigation";
-import { addTransitionType } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, type LoginInput } from "@/lib/validations/auth";
-
+import { useLogin } from "@/hooks/use-login";
 import { cn } from "@/lib/utils";
 import { SimpleIcon } from "@/components/simple-icon";
 import { Button } from "@/components/ui/button";
@@ -20,55 +14,10 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { toast } from "sonner";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const navigateWithTransition = (href: string, type: 'nav-forward' | 'nav-back') => {
-    startTransition(() => {
-      addTransitionType(type);
-      router.push(href);
-    });
-  };
-
-  const onSubmit = async (values: LoginInput) => {
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao fazer login");
-      }
-
-      toast.success("Login realizado com sucesso", {
-        description: "Seja bem-vindo de volta ao Contract Lens."
-      });
-      navigateWithTransition('/dashboard', 'nav-forward');
-    } catch (err: any) {
-      toast.error("Erro ao realizar login", {
-        description: err.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { form, loading, onSubmit, navigateWithTransition } = useLogin();
+  const { register, formState: { errors } } = form;
 
   return (
     <DirectionalTransition>
@@ -99,7 +48,7 @@ export default function LoginPage() {
             </CardHeader>
             
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={onSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold ml-1 cursor-pointer" htmlFor="email">Seu email</label>
                   <div className="relative group/field">

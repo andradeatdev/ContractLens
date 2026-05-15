@@ -8,7 +8,7 @@ test.describe('Gerenciamento de Contratos', () => {
   
   test('deve permitir upload, reanálise e exportação de contrato', async ({ page }) => {
     // 1. Login simplificado (se já tivermos um usuário ou criarmos um)
-    const randomEmail = `test-contract-${Math.floor(Math.random() * 1000000)}@example.com`;
+    const randomEmail = `test-contract-${Date.now().toString().slice(-6)}@example.com`;
     
     await page.goto('/register');
     await page.fill('input[id="name"]', 'Usuário Contrato');

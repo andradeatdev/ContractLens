@@ -9,6 +9,19 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.tsx'],
     globals: true,
     exclude: ['node_modules', 'e2e/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        '**/*.d.ts',
+        'test/**',
+        'next.config.ts',
+        'postcss.config.mjs',
+        'eslint.config.mjs',
+      ],
+    },
   },
   resolve: {
     alias: {

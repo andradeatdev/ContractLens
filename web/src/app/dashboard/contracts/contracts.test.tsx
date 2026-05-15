@@ -2,14 +2,15 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ContractsPage from "./page";
 import React from "react";
+import { Contract } from "@/types";
 
 // Variáveis hoisted para uso em vi.mock
 const { useUIStoreMock, mockData } = vi.hoisted(() => ({
   useUIStoreMock: vi.fn(),
   mockData: [
-    { id: 1, slug: "contrato-1", filename: "Aluguel.pdf", created_at: "2026-01-01T10:00:00Z", risks: [] },
-    { id: 2, slug: "contrato-2", filename: "Trabalho.pdf", created_at: "2026-02-01T10:00:00Z", risks: [] }
-  ]
+    { id: 1, slug: "contrato-1", filename: "Aluguel.pdf", created_at: "2026-01-01T10:00:00Z", risks: [], content: "" },
+    { id: 2, slug: "contrato-2", filename: "Trabalho.pdf", created_at: "2026-02-01T10:00:00Z", risks: [], content: "" }
+  ] as Contract[]
 }));
 
 // Mocks do Next.js
@@ -25,12 +26,12 @@ vi.mock("@/lib/store", () => ({
 // Mock do Modal
 vi.mock("@/components/modal-provider", () => ({
   useModal: () => ({ alert: vi.fn(), confirm: vi.fn(), prompt: vi.fn() }),
-  ModalProvider: ({ children }: any) => children,
+  ModalProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock do View Transition
 vi.mock("@/components/view-transition-wrapper", () => ({
-  DirectionalTransition: ({ children }: any) => children,
+  DirectionalTransition: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock de React Query
@@ -42,8 +43,8 @@ vi.mock("@tanstack/react-query", () => ({
   }),
   useMutation: () => ({ mutate: vi.fn() }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-  QueryClient: class { constructor() { (this as any).defaultOptions = {}; } },
-  QueryClientProvider: ({ children }: any) => children,
+  QueryClient: class { defaultOptions = {}; },
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock simplificado de Lucide Icons
@@ -52,6 +53,7 @@ vi.mock("lucide-react", () => ({
   Filter: () => <span />,
   FileText: () => <span />,
   MoreVertical: () => <span />,
+  MoreHorizontal: () => <span />,
   AlertCircle: () => <span />,
   ChevronRight: () => <span />,
   Download: () => <span />,
@@ -59,37 +61,38 @@ vi.mock("lucide-react", () => ({
   Eye: () => <span />,
   Trash2: () => <span />,
   Loader2: () => <span />,
+  History: () => <span />,
 }));
 
 // Mock de componentes Radix/Shadcn
 vi.mock("@/components/ui/breadcrumb", () => ({
-  Breadcrumb: ({ children }: any) => <nav>{children}</nav>,
-  BreadcrumbList: ({ children }: any) => <ol>{children}</ol>,
-  BreadcrumbItem: ({ children }: any) => <li>{children}</li>,
-  BreadcrumbLink: ({ children }: any) => <>{children}</>,
+  Breadcrumb: ({ children }: { children: React.ReactNode }) => <nav>{children}</nav>,
+  BreadcrumbList: ({ children }: { children: React.ReactNode }) => <ol>{children}</ol>,
+  BreadcrumbItem: ({ children }: { children: React.ReactNode }) => <li>{children}</li>,
+  BreadcrumbLink: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   BreadcrumbSeparator: () => <span>/</span>,
-  BreadcrumbPage: ({ children }: any) => <span>{children}</span>,
+  BreadcrumbPage: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }));
 
 vi.mock("@/components/ui/dropdown-menu", () => ({
-  DropdownMenu: ({ children }: any) => <div>{children}</div>,
-  DropdownMenuTrigger: ({ children }: any) => <div>{children}</div>,
-  DropdownMenuContent: ({ children }: any) => <div>{children}</div>,
-  DropdownMenuItem: ({ children }: any) => <div>{children}</div>,
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuSeparator: () => <hr />,
 }));
 
 vi.mock("@/components/ui/popover", () => ({
-  Popover: ({ children }: any) => <div>{children}</div>,
-  PopoverTrigger: ({ children }: any) => <div>{children}</div>,
-  PopoverContent: ({ children }: any) => <div>{children}</div>,
+  Popover: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PopoverTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PopoverContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock("@/components/ui/tooltip", () => ({
-  TooltipProvider: ({ children }: any) => <>{children}</>,
-  Tooltip: ({ children }: any) => <>{children}</>,
-  TooltipTrigger: ({ children }: any) => <>{children}</>,
-  TooltipContent: ({ children }: any) => <>{children}</>,
+  TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 describe("ContractsPage", () => {
@@ -106,7 +109,7 @@ describe("ContractsPage", () => {
   it("deve renderizar a lista de contratos", async () => {
     render(<ContractsPage />);
 
-    expect(screen.getByText("Seus documentos")).toBeInTheDocument();
+    expect(screen.getByText("Meus Contratos")).toBeInTheDocument();
     expect(screen.getByText("Aluguel.pdf")).toBeInTheDocument();
     expect(screen.getByText("Trabalho.pdf")).toBeInTheDocument();
   });
@@ -117,7 +120,7 @@ describe("ContractsPage", () => {
       const [searchTerm, setSearchTerm] = React.useState("");
       useUIStoreMock.mockReturnValue({
         contractFilters: { searchTerm, filterRisk: "all", sortOrder: "newest" },
-        setContractFilters: (updates: any) => {
+        setContractFilters: (updates: { searchTerm?: string }) => {
           if (updates.searchTerm !== undefined) setSearchTerm(updates.searchTerm);
         },
         resetContractFilters: vi.fn(),
@@ -132,7 +135,7 @@ describe("ContractsPage", () => {
       expect(screen.getByText("Trabalho.pdf")).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText("Buscar contrato...");
+    const searchInput = screen.getByPlaceholderText("Buscar por nome...");
     fireEvent.change(searchInput, { target: { value: "Aluguel" } });
 
     expect(searchInput).toHaveValue("Aluguel");

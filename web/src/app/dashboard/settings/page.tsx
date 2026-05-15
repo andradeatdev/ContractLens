@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, ChevronRight, User, Bell, Lock, Globe, Mail, Save, Loader2, AlertCircle } from "lucide-react";
+import { Settings, ChevronRight, User, Bell, Lock, Mail, Save, Loader2, AlertCircle } from "lucide-react";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,17 +20,20 @@ export default function SettingsPage() {
     register,
     handleSubmit,
     reset,
-    watch,
+    getValues,
     formState: { errors },
   } = useForm<ProfileInput>({
     resolver: zodResolver(profileSchema),
   });
 
-  const currentValues = watch();
-  const isDirty = initialProfile && (
-    currentValues.name !== initialProfile.name || 
-    currentValues.email !== initialProfile.email
-  );
+  const checkIsDirty = () => {
+    if (!initialProfile) return false;
+    const values = getValues();
+    return values.name !== initialProfile.name || 
+           values.email !== initialProfile.email;
+  };
+
+  const isDirty = checkIsDirty();
 
   // Carregar dados reais do backend ao montar a página
   useEffect(() => {
@@ -77,8 +80,8 @@ export default function SettingsPage() {
         message: "Configurações atualizadas com sucesso",
         type: "success"
       });
-    } catch (err: any) {
-      setError(err.message || "Erro ao conectar com o servidor.");
+    } catch (err: unknown) {
+      setError((err as Error).message || "Erro ao conectar com o servidor.");
     } finally {
       setLoading(false);
     }

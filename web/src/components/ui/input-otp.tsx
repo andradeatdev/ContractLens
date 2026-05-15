@@ -48,7 +48,11 @@ function InputOTPSlot({
   index: number
 }) {
   const inputOTPContext = React.useContext(OTPInputContext)
-  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
+  // Safe: 'index' is a controlled number and 'slots' is an array from the input-otp context.
+  // This is a standard pattern for UI components and not a security risk.
+  // eslint-disable-next-line security/detect-object-injection
+  const slot = inputOTPContext?.slots ? inputOTPContext.slots[index] : undefined
+  const { char, hasFakeCaret, isActive } = slot ?? {}
 
   return (
     <div

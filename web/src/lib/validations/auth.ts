@@ -11,7 +11,7 @@ export const registerSchema = z.object({
   password: z.string()
     .min(8, "A senha deve ter pelo menos 8 caracteres")
     .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
-    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
+    .regex(/\d/, "A senha deve conter pelo menos um número"),
 });
 
 export const profileSchema = z.object({

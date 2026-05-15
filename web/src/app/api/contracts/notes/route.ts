@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Create Note error:", error);
-    return NextResponse.json({ error: `Erro interno: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Erro interno: ${(error as Error).message}` }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import React from 'react';
 
 // Mock do useRouter do Next.js
 vi.mock('next/navigation', () => ({
@@ -39,10 +40,10 @@ global.ResizeObserver = ResizeObserver;
 // Mock do framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
-    header: ({ children, ...props }: any) => <header {...props}>{children}</header>,
-    nav: ({ children, ...props }: any) => <nav {...props}>{children}</nav>,
+    div: ({ children, ...props }: React.ComponentPropsWithoutRef<'div'>) => <div {...props}>{children}</div>,
+    span: ({ children, ...props }: React.ComponentPropsWithoutRef<'span'>) => <span {...props}>{children}</span>,
+    header: ({ children, ...props }: React.ComponentPropsWithoutRef<'header'>) => <header {...props}>{children}</header>,
+    nav: ({ children, ...props }: React.ComponentPropsWithoutRef<'nav'>) => <nav {...props}>{children}</nav>,
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));

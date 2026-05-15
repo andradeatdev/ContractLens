@@ -17,14 +17,34 @@ import (
 )
 
 func NewApp() http.Handler {
-	// 1. Conexão com DB
+	db := initDB()
+	storage := initStorage()
+	emailSender := &adapters.NextEmailAdapter{}
+
+	contractRepo := repositories.NewGormRepository(db)
+	if err := contractRepo.EnsureDefaultUser(); err != nil {
+		log.Printf("Erro ao criar usuário padrão: %v", err)
+	}
+
+	contractService := services.NewContractService(contractRepo, nil, nil, storage)
+	contractHandler := handlers.NewContractHandler(contractService)
+
+	authService := services.NewAuthService(contractRepo, emailSender)
+	authHandler := handlers.NewAuthHandler(authService)
+
+	mux := http.NewServeMux()
+	registerRoutes(mux, authHandler, contractHandler)
+
+	return handlers.CanonicalLogMiddleware(mux)
+}
+
+func initDB() *gorm.DB {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		dsn = os.Getenv("POSTGRES_URL")
 	}
 
 	if dsn == "" {
-		// Construção segura sem fmt.Sprintf para evitar problemas com caracteres especiais (ex: %)
 		parts := []string{
 			"host=" + os.Getenv("DB_HOST"),
 			"user=" + os.Getenv("DB_USER"),
@@ -36,139 +56,123 @@ func NewApp() http.Handler {
 		dsn = strings.Join(parts, " ")
 	}
 
-	log.Printf("Conectando ao banco de dados...")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Não foi possível conectar ao banco de dados:", err)
 	}
 
-	// 2. Auto Migração
-	log.Println("Iniciando AutoMigrate para as tabelas...")
-	err = db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{})
-	if err != nil {
-		log.Printf("ERRO CRÍTICO na migração do banco: %v", err)
-	} else {
-		log.Println("Migração do banco de dados concluída com sucesso")
+	if err := db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{}); err != nil {
+		log.Printf("ERRO na migração do banco: %v", err)
 	}
 
-	// 3. Injeção de Dependências (Arquitetura Hexagonal)
-	// 3.1 Adaptador de Banco de Dados
-	contractRepo := repositories.NewGormRepository(db)
-	
-	if err := contractRepo.EnsureDefaultUser(); err != nil {
-		log.Printf("Erro ao criar usuário padrão: %v", err)
-	}
+	return db
+}
 
-	// 3.2 Adaptador de Armazenamento
-	var storage services.FileStorage
+func initStorage() services.FileStorage {
 	blobToken := os.Getenv("BLOB_READ_WRITE_TOKEN")
 	if blobToken != "" {
-		storage = &services.VercelBlobAdapter{Token: blobToken}
 		log.Println("Usando Vercel Blob para armazenamento")
-	} else {
-		uploadDir := "uploads"
-		if os.Getenv("VERCEL") == "1" {
-			uploadDir = "/tmp/uploads"
-		}
-		storage = &services.LocalStorageAdapter{UploadDir: uploadDir}
-		log.Println("Usando armazenamento local em:", uploadDir)
+		return &services.VercelBlobAdapter{Token: blobToken}
 	}
 
-	// 3.3 Adaptador de E-mail
-	emailSender := &adapters.NextEmailAdapter{}
+	uploadDir := "uploads"
+	if os.Getenv("VERCEL") == "1" {
+		uploadDir = "/tmp/uploads"
+	}
+	log.Println("Usando armazenamento local em:", uploadDir)
+	return &services.LocalStorageAdapter{UploadDir: uploadDir}
+}
 
-	// 3.4 Serviços (Core) com Injeção de Dependência
-	contractService := services.NewContractService(contractRepo, nil, nil, storage)
-	contractHandler := handlers.NewContractHandler(contractService)
-
-	authService := services.NewAuthService(contractRepo, emailSender)
-	authHandler := handlers.NewAuthHandler(authService)
-
-	// 4. Mux
-	mux := http.NewServeMux()
-
+func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *handlers.ContractHandler) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "OK")
+		_, _ = fmt.Fprintf(w, "OK")
 	})
 
-	// Rotas Públicas de Auth
-	mux.HandleFunc("/auth/register", corsMiddleware(authHandler.Register))
-	mux.HandleFunc("/auth/login", corsMiddleware(authHandler.Login))
-	mux.HandleFunc("/auth/verify", corsMiddleware(authHandler.VerifyEmail))
-	mux.HandleFunc("/auth/resend-code", corsMiddleware(authHandler.ResendVerificationCode))
+	// Auth
+	mux.HandleFunc("/auth/register", corsMiddleware(auth.Register))
+	mux.HandleFunc("/auth/login", corsMiddleware(auth.Login))
+	mux.HandleFunc("/auth/verify", corsMiddleware(auth.VerifyEmail))
+	mux.HandleFunc("/auth/resend-code", corsMiddleware(auth.ResendVerificationCode))
 
-	// Rotas Protegidas
-	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contractHandler.Upload)))
-	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contractHandler.Chat)))
-	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contractHandler.Activity)))
-	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contractHandler.Stats)))
+	// Protegidas
+	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contract.Upload)))
+	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contract.Chat)))
+	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contract.Activity)))
+	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contract.Stats)))
 	
 	mux.HandleFunc("/user", corsMiddleware(handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			contractHandler.GetUser(w, r)
-		} else if r.Method == http.MethodPut || r.Method == http.MethodPost {
-			contractHandler.UpdateUser(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+		handleUserRoute(w, r, contract)
 	})))
 	
 	mux.HandleFunc("/contracts/", corsMiddleware(handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/contracts" || r.URL.Path == "/contracts/" {
-			contractHandler.List(w, r)
-			return
-		}
-
-		if strings.HasPrefix(r.URL.Path, "/contracts/s/") {
-			slug := strings.TrimPrefix(r.URL.Path, "/contracts/s/")
-			contractHandler.GetBySlug(w, r, slug)
-			return
-		}
-
-		if r.URL.Path == "/contracts/notes" && r.Method == http.MethodPost {
-			contractHandler.CreateNote(w, r)
-			return
-		}
-
-		var id uint
-		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/notes/%d", &id); err == nil {
-			contractHandler.DeleteNote(w, r, id)
-			return
-		}
-
-		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/download", &id); err == nil {
-			contractHandler.Download(w, r, id)
-			return
-		}
-
-		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/reanalyze", &id); err == nil {
-			contractHandler.Reanalyze(w, r, id)
-			return
-		}
-
-		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d/export", &id); err == nil {
-			contractHandler.ExportAnalysis(w, r, id)
-			return
-		}
-
-		if _, err := fmt.Sscanf(r.URL.Path, "/contracts/%d", &id); err != nil {
-			http.Error(w, "Invalid Contract Path", http.StatusBadRequest)
-			return
-		}
-
-		switch r.Method {
-		case http.MethodGet:
-			contractHandler.GetByID(w, r, id)
-		case http.MethodPut, http.MethodPatch:
-			contractHandler.Update(w, r, id)
-		case http.MethodDelete:
-			contractHandler.Delete(w, r, id)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+		handleContractsRoute(w, r, contract)
 	})))
+}
 
-	return handlers.CanonicalLogMiddleware(mux)
+func handleUserRoute(w http.ResponseWriter, r *http.Request, h *handlers.ContractHandler) {
+	if r.Method == http.MethodGet {
+		h.GetUser(w, r)
+	} else if r.Method == http.MethodPut || r.Method == http.MethodPost {
+		h.UpdateUser(w, r)
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func handleContractsRoute(w http.ResponseWriter, r *http.Request, h *handlers.ContractHandler) {
+	path := r.URL.Path
+	if path == "/contracts" || path == "/contracts/" {
+		h.List(w, r)
+		return
+	}
+
+	if strings.HasPrefix(path, "/contracts/s/") {
+		slug := strings.TrimPrefix(path, "/contracts/s/")
+		h.GetBySlug(w, r, slug)
+		return
+	}
+
+	if path == "/contracts/notes" && r.Method == http.MethodPost {
+		h.CreateNote(w, r)
+		return
+	}
+
+	var id uint
+	if _, err := fmt.Sscanf(path, "/contracts/notes/%d", &id); err == nil {
+		h.DeleteNote(w, r, id)
+		return
+	}
+
+	if _, err := fmt.Sscanf(path, "/contracts/%d/download", &id); err == nil {
+		h.Download(w, r, id)
+		return
+	}
+
+	if _, err := fmt.Sscanf(path, "/contracts/%d/reanalyze", &id); err == nil {
+		h.Reanalyze(w, r, id)
+		return
+	}
+
+	if _, err := fmt.Sscanf(path, "/contracts/%d/export", &id); err == nil {
+		h.ExportAnalysis(w, r, id)
+		return
+	}
+
+	if _, err := fmt.Sscanf(path, "/contracts/%d", &id); err != nil {
+		http.Error(w, "Invalid Contract Path", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		h.GetByID(w, r, id)
+	case http.MethodPut, http.MethodPatch:
+		h.Update(w, r, id)
+	case http.MethodDelete:
+		h.Delete(w, r, id)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {

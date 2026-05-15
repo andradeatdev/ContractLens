@@ -1,125 +1,149 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Shield, CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function VerifyEmailPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ token?: string }>;
-}) {
-  const resolvedSearchParams = use(searchParams);
-  const token = resolvedSearchParams.token;
+function VerifyEmailContent() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    !token ? "error" : "loading"
+  );
+  const [message, setMessage] = useState(
+    !token 
+      ? "Token de verificação ausente ou inválido." 
+      : "Verificando seu endereço de e-mail..."
+  );
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Token de verificação ausente.");
-      return;
-    }
+    if (!token) return;
 
-    const verify = async () => {
+    const verifyEmail = async () => {
       try {
-        const response = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-
+        const response = await fetch(`/api/emails/verify?token=${token}`);
         const data = await response.json();
 
         if (response.ok) {
           setStatus("success");
-          setMessage("Seu e-mail foi verificado com sucesso!");
+          setMessage("Seu e-mail foi verificado com sucesso! Agora você pode acessar sua conta.");
         } else {
           setStatus("error");
-          setMessage(data.error || "Token inválido ou expirado.");
+          setMessage(data.error || "Ocorreu um erro ao verificar seu e-mail.");
         }
       } catch (err) {
+        console.error("Erro na verificação:", err);
         setStatus("error");
-        setMessage("Ocorreu um erro ao tentar verificar seu e-mail.");
+        setMessage("Erro de conexão. Tente novamente mais tarde.");
       }
     };
 
-    verify();
+    verifyEmail();
   }, [token]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="max-w-md w-full shadow-xl border-none rounded-[2rem] overflow-hidden">
-        <div className="h-2 bg-primary w-full" />
-        <CardHeader className="pt-10 text-center">
-          <div className="flex justify-center mb-6">
-            {status === "loading" && (
-              <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            )}
-            {status === "success" && (
-              <div className="h-16 w-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-              </div>
-            )}
-            {status === "error" && (
-              <div className="h-16 w-16 bg-destructive/10 rounded-2xl flex items-center justify-center">
-                <XCircle className="h-8 w-8 text-destructive" />
-              </div>
-            )}
+  const renderContent = () => {
+    if (status === "loading") {
+      return (
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-sm font-medium text-muted-foreground">{message}</p>
+        </div>
+      );
+    }
+
+    if (status === "success") {
+      return (
+        <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-500">
+          <div className="h-16 w-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="h-10 w-10" />
           </div>
-          <CardTitle className="text-2xl font-black">
-            {status === "loading" && "Verificando e-mail"}
-            {status === "success" && "E-mail verificado!"}
-            {status === "error" && "Erro na verificação"}
-          </CardTitle>
-          <CardDescription className="text-sm font-medium pt-2">
-            {status === "loading" && "Por favor, aguarde um momento enquanto validamos seu cadastro."}
-            {status === "success" && "Tudo pronto! Você já pode acessar todas as funcionalidades."}
-            {status === "error" && message}
+          <p className="text-sm font-medium text-foreground px-6 leading-relaxed">
+            {message}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-500">
+        <div className="h-16 w-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center">
+          <XCircle className="h-10 w-10" />
+        </div>
+        <p className="text-sm font-medium text-destructive px-6 leading-relaxed">
+          {message}
+        </p>
+      </div>
+    );
+  };
+
+  const renderFooter = () => {
+    if (status === "success") {
+      return (
+        <Button asChild className="w-full h-12 rounded-xl font-bold gap-2">
+          <Link href="/login">
+            Ir para o Login
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      );
+    }
+    
+    if (status === "error") {
+      return (
+        <Button asChild variant="outline" className="w-full h-12 rounded-xl font-bold">
+          <Link href="/register">
+            Tentar cadastrar novamente
+          </Link>
+        </Button>
+      );
+    }
+
+    return (
+      <p className="text-xs text-muted-foreground animate-pulse">
+        Processando requisição segura...
+      </p>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 selection:bg-primary/20">
+      <Card className="w-full max-w-md border-border shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <CardHeader className="text-center pb-2">
+          <div className="flex justify-center mb-6">
+            <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
+              <Shield className="h-8 w-8 text-primary-foreground" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-extrabold tracking-tight">Verificação de E-mail</CardTitle>
+          <CardDescription>
+            Validando sua identidade no Contract Lens
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="pb-10 px-10">
-          {status === "success" && (
-            <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl text-xs font-bold flex items-center gap-3">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              Sua conta foi ativada e está pronta para uso.
-            </div>
-          )}
-          {status === "error" && (
-            <div className="bg-destructive/5 text-destructive p-4 rounded-2xl text-xs font-bold flex items-center gap-3">
-              <XCircle className="h-4 w-4 shrink-0" />
-              {message}
-            </div>
-          )}
+        <CardContent className="py-10 text-center">
+          {renderContent()}
         </CardContent>
 
         <CardFooter className="bg-muted/50 p-6 flex justify-center">
-          {status === "success" ? (
-            <Button asChild className="w-full h-12 rounded-xl font-bold gap-2">
-              <Link href="/login">
-                Ir para o Login
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          ) : status === "error" ? (
-            <Button asChild variant="outline" className="w-full h-12 rounded-xl font-bold">
-              <Link href="/register">
-                Tentar cadastrar novamente
-              </Link>
-            </Button>
-          ) : (
-            <p className="text-xs text-muted-foreground animate-pulse">
-              Processando requisição segura...
-            </p>
-          )}
+          {renderFooter()}
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

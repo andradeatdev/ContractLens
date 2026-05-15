@@ -1,8 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { AlertCircle, CheckCircle2, HelpCircle, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,23 +11,25 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AlertCircle, CheckCircle2, HelpCircle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ModalType = "alert" | "confirm" | "prompt";
+type ModalSeverity = "default" | "destructive" | "success";
 
 interface ModalOptions {
   title: string;
   message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  defaultValue?: string;
-  placeholder?: string;
+  type?: ModalSeverity;
   onConfirm?: (value?: string) => void | Promise<void>;
   onCancel?: () => void;
-  type?: "default" | "destructive" | "success";
+  confirmLabel?: string;
+  cancelLabel?: string;
+  placeholder?: string;
 }
 
 interface ModalContextType {
-  alert: (options: Omit<ModalOptions, "onConfirm" | "onCancel" | "defaultValue" | "placeholder">) => void;
+  alert: (options: ModalOptions) => void;
   confirm: (options: ModalOptions) => void;
   prompt: (options: ModalOptions) => void;
   closeModal: () => void;
@@ -44,56 +44,46 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const closeModal = useCallback(() => {
-    if (isSubmitting) return;
-    setIsOpen(false);
-    setOptions(null);
-    setInputValue("");
-    setIsSubmitting(false);
-  }, [isSubmitting]);
-
-  const showAlert = useCallback((opts: Omit<ModalOptions, "onConfirm" | "onCancel" | "defaultValue" | "placeholder">) => {
+  const showAlert = (opts: ModalOptions) => {
+    setOptions(opts);
     setModalType("alert");
-    setOptions({ ...opts, confirmLabel: opts.confirmLabel || "Entendido" });
     setIsOpen(true);
-  }, []);
+  };
 
-  const showConfirm = useCallback((opts: ModalOptions) => {
+  const showConfirm = (opts: ModalOptions) => {
+    setOptions(opts);
     setModalType("confirm");
-    setOptions({ 
-      ...opts, 
-      confirmLabel: opts.confirmLabel || "Confirmar", 
-      cancelLabel: opts.cancelLabel || "Cancelar" 
-    });
     setIsOpen(true);
-  }, []);
+  };
 
-  const showPrompt = useCallback((opts: ModalOptions) => {
+  const showPrompt = (opts: ModalOptions) => {
+    setOptions(opts);
     setModalType("prompt");
-    setInputValue(opts.defaultValue || "");
-    setOptions({ 
-      ...opts, 
-      confirmLabel: opts.confirmLabel || "Salvar", 
-      cancelLabel: opts.cancelLabel || "Cancelar" 
-    });
     setIsOpen(true);
-  }, []);
+    setInputValue("");
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setTimeout(() => {
+      setOptions(null);
+      setIsSubmitting(false);
+    }, 200);
+  };
 
   const handleConfirm = async () => {
-    if (!options) return;
-    
-    if (options.onConfirm) {
+    if (options?.onConfirm) {
       setIsSubmitting(true);
       try {
         await options.onConfirm(modalType === "prompt" ? inputValue : undefined);
-        setIsOpen(false);
-      } catch (error) {
-        console.error("Modal confirm error:", error);
+        closeModal();
+      } catch (err) {
+        console.error("Erro no callback do modal:", err);
       } finally {
         setIsSubmitting(false);
       }
     } else {
-      setIsOpen(false);
+      closeModal();
     }
   };
 
@@ -101,6 +91,28 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     if (isSubmitting) return;
     if (options?.onCancel) options.onCancel();
     closeModal();
+  };
+
+  const getIconContainerClass = () => {
+    if (!options) return "";
+    
+    if (options.type === "destructive") {
+      return "bg-destructive/10 text-destructive";
+    }
+    
+    if (options.type === "success") {
+      return "bg-emerald-500/10 text-emerald-500";
+    }
+    
+    return "bg-primary/10 text-primary";
+  };
+
+  const getModalIcon = () => {
+    if (!options) return null;
+    if (options.type === "destructive") return <AlertCircle className="h-5 w-5" />;
+    if (options.type === "success") return <CheckCircle2 className="h-5 w-5" />;
+    if (modalType === "confirm") return <HelpCircle className="h-5 w-5" />;
+    return <AlertCircle className="h-5 w-5" />;
   };
 
   return (
@@ -114,12 +126,9 @@ export function ModalProvider({ children }: { children: ReactNode }) {
               <DialogHeader className="text-left flex flex-row items-start gap-4 space-y-0">
                 <div className={cn(
                   "mt-1 rounded-full p-2 shrink-0",
-                  options.type === "destructive" ? "bg-destructive/10 text-destructive" : 
-                  options.type === "success" ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+                  getIconContainerClass()
                 )}>
-                  {options.type === "destructive" ? <AlertCircle className="h-5 w-5" /> : 
-                   options.type === "success" ? <CheckCircle2 className="h-5 w-5" /> : 
-                   modalType === "confirm" ? <HelpCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                  {getModalIcon()}
                 </div>
                 <div className="space-y-1 pr-4">
                   <DialogTitle className="text-lg font-bold">{options.title}</DialogTitle>
@@ -148,23 +157,22 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                 {(modalType === "confirm" || modalType === "prompt") && (
                   <Button
                     variant="outline"
-                    disabled={isSubmitting}
                     onClick={handleCancel}
-                    className="h-10 px-4 font-bold"
+                    disabled={isSubmitting}
+                    className="h-10 rounded-xl font-bold px-5"
                   >
-                    {options.cancelLabel}
+                    {options.cancelLabel || "Cancelar"}
                   </Button>
                 )}
                 <Button
-                  disabled={isSubmitting}
-                  onClick={handleConfirm}
+                  type="button"
                   variant={options.type === "destructive" ? "destructive" : "default"}
-                  className={cn(
-                    "h-10 px-4 min-w-[100px] font-bold shadow-sm",
-                    options.type !== "destructive" && "bg-primary text-primary-foreground hover:bg-primary/90"
-                  )}
+                  onClick={handleConfirm}
+                  disabled={isSubmitting || (modalType === "prompt" && !inputValue.trim())}
+                  className="h-10 rounded-xl font-bold px-6 gap-2"
                 >
-                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : options.confirmLabel}
+                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {options.confirmLabel || (modalType === "alert" ? "Entendi" : "Confirmar")}
                 </Button>
               </DialogFooter>
             </>
@@ -175,10 +183,10 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useModal() {
+export const useModal = () => {
   const context = useContext(ModalContext);
-  if (context === undefined) {
-    throw new Error("useModal must be used within a ModalProvider");
+  if (!context) {
+    throw new Error("useModal deve ser usado dentro de um ModalProvider");
   }
   return context;
 }

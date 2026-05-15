@@ -1,14 +1,9 @@
 "use client";
 
-import { useState, startTransition, useEffect } from "react";
 import Link from "next/link";
-import { Shield, Check, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Shield, ArrowRight, Loader2, AlertCircle, Check } from "lucide-react";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
-import { useRouter } from "next/navigation";
-import { addTransitionType } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
+import { useRegister } from "@/hooks/use-register";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,154 +13,31 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { toast } from "sonner";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-
 import { SimpleIcon } from "@/components/simple-icon";
 
 export default function RegisterPage() {
-  const [loading, setLoading] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
-  const [otpValue, setOtpValue] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const router = useRouter();
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (resendCooldown > 0) {
-      timer = setInterval(() => {
-        setResendCooldown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
-
   const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-  });
+    form,
+    loading,
+    registeredEmail,
+    otpValue,
+    setOtpValue,
+    resendCooldown,
+    passwordRequirements,
+    onRegister,
+    onResendCode,
+    onVerifyOTP,
+    navigateWithTransition,
+    setRegisteredEmail,
+  } = useRegister();
 
-  const passwordValue = watch("password", "");
-
-  const passwordRequirements = [
-    { label: "Ao menos 8 caracteres", met: passwordValue.length >= 8 },
-    { label: "Uma letra maiúscula", met: /[A-Z]/.test(passwordValue) },
-    { label: "Um número", met: /[0-9]/.test(passwordValue) },
-  ];
-
-  const navigateWithTransition = (href: string, type: 'nav-forward' | 'nav-back') => {
-    startTransition(() => {
-      addTransitionType(type);
-      router.push(href);
-    });
-  };
-
-  const onSubmit = async (values: RegisterInput) => {
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar conta");
-      }
-
-      toast.success("Conta criada com sucesso", {
-        description: "Um código de verificação foi enviado para seu e-mail."
-      });
-      setRegisteredEmail(values.email);
-      setResendCooldown(60);
-    } catch (err: any) {
-      toast.error("Erro ao criar conta", {
-        description: err.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onResendCode = async () => {
-    if (resendCooldown > 0 || !registeredEmail) return;
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/resend-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: registeredEmail }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const match = data.error.match(/Aguarde (\d+) segundos/);
-        if (match) {
-          setResendCooldown(parseInt(match[1]));
-        }
-        throw new Error(data.error || "Erro ao reenviar código");
-      }
-
-      toast.success("Código reenviado", {
-        description: "Um novo código foi enviado para seu e-mail."
-      });
-      setResendCooldown(60);
-    } catch (err: any) {
-      toast.error("Erro ao reenviar código", {
-        description: err.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onVerifyOTP = async () => {
-    if (otpValue.length < 6) return;
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: registeredEmail, code: otpValue }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Código inválido");
-      }
-
-      toast.success("E-mail verificado com sucesso", {
-        description: "Sua conta está ativa e pronta para uso."
-      });
-      
-      startTransition(() => {
-        router.push("/dashboard");
-      });
-    } catch (err: any) {
-      toast.error("Erro ao verificar e-mail", {
-        description: err.message
-      });
-      setOtpValue("");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { register, formState: { errors } } = form;
 
   return (
     <DirectionalTransition>
@@ -202,7 +74,7 @@ export default function RegisterPage() {
                       maxLength={6}
                       value={otpValue}
                       onChange={setOtpValue}
-                      onComplete={onVerifyOTP}
+                      onComplete={() => onVerifyOTP()}
                       disabled={loading}
                     >
                       <InputOTPGroup className="gap-2">
@@ -220,7 +92,7 @@ export default function RegisterPage() {
                   </div>
 
                   <Button
-                    onClick={onVerifyOTP}
+                    onClick={() => onVerifyOTP()}
                     disabled={loading || otpValue.length < 6}
                     className="w-full h-14 bg-primary text-primary-foreground rounded-2xl font-bold hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 active:scale-[0.98] flex items-center justify-center gap-2 disabled:cursor-wait"
                   >
@@ -256,7 +128,7 @@ export default function RegisterPage() {
                 </CardHeader>
                 
                 <CardContent>
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                  <form onSubmit={onRegister} className="space-y-5">
                     <div className="space-y-2">
                       <label className="text-sm font-bold ml-1 cursor-pointer" htmlFor="name">Seu nome completo</label>
                       <div className="relative">

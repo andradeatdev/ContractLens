@@ -4,7 +4,7 @@ interface LogEntry {
   message: string;
   level: LogLevel;
   timestamp: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   trace_id?: string;
 }
 
@@ -24,14 +24,14 @@ class Logger {
   }
 
   private generateTraceId(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return crypto.randomUUID();
   }
 
   public getTraceId(): string {
     return this.traceId;
   }
 
-  private log(level: LogLevel, message: string, context?: Record<string, any>) {
+  private log(level: LogLevel, message: string, context?: Record<string, unknown>) {
     const entry: LogEntry = {
       message,
       level,
@@ -42,32 +42,33 @@ class Logger {
 
     // Em desenvolvimento usamos console colorido, em produção JSON estruturado
     if (process.env.NODE_ENV === 'development') {
-      const colors = {
-        info: '\x1b[32m',
-        warn: '\x1b[33m',
-        error: '\x1b[31m',
-        debug: '\x1b[34m',
-        reset: '\x1b[0m',
-      };
-      console.log(`${colors[level]}[${level.toUpperCase()}]${colors.reset} ${message}`, context || '');
+      let color = '\x1b[0m';
+      switch (level) {
+        case 'info': color = '\x1b[32m'; break;
+        case 'warn': color = '\x1b[33m'; break;
+        case 'error': color = '\x1b[31m'; break;
+        case 'debug': color = '\x1b[34m'; break;
+      }
+      const reset = '\x1b[0m';
+      console.log(`${color}[${level.toUpperCase()}]${reset} ${message}`, context || '');
     } else {
       console.log(JSON.stringify(entry));
     }
   }
 
-  public info(message: string, context?: Record<string, any>) {
+  public info(message: string, context?: Record<string, unknown>) {
     this.log('info', message, context);
   }
 
-  public warn(message: string, context?: Record<string, any>) {
+  public warn(message: string, context?: Record<string, unknown>) {
     this.log('warn', message, context);
   }
 
-  public error(message: string, context?: Record<string, any>) {
+  public error(message: string, context?: Record<string, unknown>) {
     this.log('error', message, context);
   }
 
-  public debug(message: string, context?: Record<string, any>) {
+  public debug(message: string, context?: Record<string, unknown>) {
     this.log('debug', message, context);
   }
 }

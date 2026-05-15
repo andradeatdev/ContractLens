@@ -53,7 +53,7 @@ func (m *mockStorage) Delete(ctx context.Context, path string) error {
 
 func setupContractTestDB() repositories.Repository {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
+	_ = db.AutoMigrate(&models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.User{}, &models.Note{})
 	return repositories.NewGormRepository(db)
 }
 
@@ -81,7 +81,7 @@ func TestAnalyzeContract(t *testing.T) {
 	
 	// Setup user
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 
 	contract, err := service.AnalyzeContract(context.Background(), user.ID, "contrato.pdf", []byte("pdf data"))
 	
@@ -107,7 +107,7 @@ func TestAnalyzeNonContract(t *testing.T) {
 	
 	service := NewContractService(repo, mockAI, mockExt, mockStor)
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 
 	_, err := service.AnalyzeContract(context.Background(), user.ID, "curriculo.pdf", []byte("pdf data"))
 	
@@ -120,7 +120,7 @@ func TestReanalyzeContract(t *testing.T) {
 	
 	// 1. Criar contrato inicial
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 	
 	contract := &models.Contract{
 		UserID:   user.ID,
@@ -131,7 +131,7 @@ func TestReanalyzeContract(t *testing.T) {
 			{Title: "Risco Antigo", Severity: "low"},
 		},
 	}
-	repo.Create(contract)
+	_ = repo.Create(contract)
 
 	// 2. Mock Nova Análise
 	mockAI := &mockAI{
@@ -164,7 +164,7 @@ func TestReanalyzeContract(t *testing.T) {
 func TestExportAnalysis(t *testing.T) {
 	repo := setupContractTestDB()
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 	
 	contract := &models.Contract{
 		UserID:   user.ID,
@@ -175,7 +175,7 @@ func TestExportAnalysis(t *testing.T) {
 			{Title: "Risco 1", Severity: "high", Explanation: "Explicação 1"},
 		},
 	}
-	repo.Create(contract)
+	_ = repo.Create(contract)
 	
 	service := NewContractService(repo, nil, nil, nil)
 	
@@ -191,7 +191,7 @@ func TestExportAnalysis(t *testing.T) {
 func TestChat(t *testing.T) {
 	repo := setupContractTestDB()
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 	
 	contract := &models.Contract{
 		UserID:   user.ID,
@@ -199,7 +199,7 @@ func TestChat(t *testing.T) {
 		Slug:     "test-chat",
 		Content:  "Conteúdo do contrato",
 	}
-	repo.Create(contract)
+	_ = repo.Create(contract)
 	
 	mockAI := &mockAI{}
 	service := NewContractService(repo, mockAI, nil, nil)
@@ -213,10 +213,10 @@ func TestChat(t *testing.T) {
 func TestStats(t *testing.T) {
 	repo := setupContractTestDB()
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 	
-	repo.Create(&models.Contract{UserID: user.ID, Slug: "c1", Risks: []models.Risk{{Severity: "high"}}})
-	repo.Create(&models.Contract{UserID: user.ID, Slug: "c2", Risks: []models.Risk{{Severity: "medium"}}})
+	_ = repo.Create(&models.Contract{UserID: user.ID, Slug: "c1", Risks: []models.Risk{{Severity: "high"}}})
+	_ = repo.Create(&models.Contract{UserID: user.ID, Slug: "c2", Risks: []models.Risk{{Severity: "medium"}}})
 	
 	service := NewContractService(repo, nil, nil, nil)
 	stats, err := service.GetStats(user.ID)
@@ -230,10 +230,10 @@ func TestStats(t *testing.T) {
 func TestAddNote(t *testing.T) {
 	repo := setupContractTestDB()
 	user := &models.User{Name: "Test User", Email: "test@example.com"}
-	repo.CreateUser(user)
+	_ = repo.CreateUser(user)
 	
 	contract := &models.Contract{UserID: user.ID, Slug: "c1", Filename: "test.pdf"}
-	repo.Create(contract)
+	_ = repo.Create(contract)
 	
 	service := NewContractService(repo, nil, nil, nil)
 	note, err := service.AddNote(user.ID, "c1", "Minha nota", "Texto selecionado", "yellow")
@@ -243,3 +243,4 @@ func TestAddNote(t *testing.T) {
 	assert.Equal(t, "Minha nota", note.Content)
 	assert.Equal(t, "yellow", note.Color)
 }
+

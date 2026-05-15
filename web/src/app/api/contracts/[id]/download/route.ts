@@ -32,7 +32,7 @@ export async function GET(
         "Content-Type": response.headers.get("Content-Type") || "text/plain",
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

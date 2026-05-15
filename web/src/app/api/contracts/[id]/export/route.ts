@@ -35,8 +35,8 @@ export async function GET(
         "Content-Disposition": `attachment; filename=${filename}`,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Export error:", error);
-    return NextResponse.json({ error: `Erro interno: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Erro interno: ${(error as Error).message}` }, { status: 500 });
   }
 }

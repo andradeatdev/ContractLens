@@ -7,7 +7,7 @@ import (
 
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
-	"github.com/golang-jwt/jwt/v5"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
@@ -59,7 +59,9 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 			return nil, err
 		}
 
-		s.email.SendVerificationEmail(existing.Email, existing.Name, otpCode)
+		if err := s.email.SendVerificationEmail(existing.Email, existing.Name, otpCode); err != nil {
+			return nil, fmt.Errorf("Erro ao enviar e-mail de verificação: %w", err)
+		}
 		return existing, nil
 	}
 
@@ -99,7 +101,9 @@ func (s *AuthService) Register(name, email, password string) (*models.User, erro
 	}
 
 	// Disparar envio de e-mail (Síncrono para garantir execução em ambientes Serverless)
-	s.email.SendVerificationEmail(user.Email, user.Name, otpCode)
+	if err := s.email.SendVerificationEmail(user.Email, user.Name, otpCode); err != nil {
+		return nil, fmt.Errorf("Erro ao enviar e-mail de verificação: %w", err)
+	}
 
 	return user, nil
 }
@@ -134,8 +138,7 @@ func (s *AuthService) ResendVerificationCode(email string) error {
 		return err
 	}
 
-	s.email.SendVerificationEmail(user.Email, user.Name, otpCode)
-	return nil
+	return s.email.SendVerificationEmail(user.Email, user.Name, otpCode)
 }
 
 func (s *AuthService) VerifyEmail(email, code string) (string, error) {

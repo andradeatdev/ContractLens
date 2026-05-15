@@ -1,7 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/navbar";
-import { Shield, FileText, Zap, Search, MessageSquare, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Shield, FileText, Zap, Search, MessageSquare, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";

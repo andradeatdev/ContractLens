@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shield, ArrowLeft, Home, Search, Compass } from "lucide-react";
+import { Compass } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";

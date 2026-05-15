@@ -18,14 +18,14 @@ type LocalStorageAdapter struct {
 }
 
 func (a *LocalStorageAdapter) Upload(ctx context.Context, filename string, data []byte) (string, error) {
-	if err := os.MkdirAll(a.UploadDir, 0755); err != nil {
+	if err := os.MkdirAll(a.UploadDir, 0750); err != nil {
 		return "", err
 	}
 
 	uniqueFilename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filename)
 	filePath := filepath.Join(a.UploadDir, uniqueFilename)
 
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := os.WriteFile(filePath, data, 0600); err != nil {
 		return "", err
 	}
 
@@ -33,7 +33,8 @@ func (a *LocalStorageAdapter) Upload(ctx context.Context, filename string, data 
 }
 
 func (a *LocalStorageAdapter) Download(ctx context.Context, path string) ([]byte, error) {
-	return os.ReadFile(path)
+	// #nosec G304 - path is retrieved from DB and represents an uploaded contract
+	return os.ReadFile(filepath.Clean(path))
 }
 
 func (a *LocalStorageAdapter) Delete(ctx context.Context, path string) error {
@@ -64,7 +65,7 @@ func (a *VercelBlobAdapter) Upload(ctx context.Context, filename string, data []
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() // Ignored as reading is done or failed
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
@@ -94,7 +95,7 @@ func (a *VercelBlobAdapter) Download(ctx context.Context, url string) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() // Ignored as reading is done or failed
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to download from blob: %d", resp.StatusCode)
@@ -116,7 +117,7 @@ func (a *VercelBlobAdapter) Delete(ctx context.Context, url string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() // Ignored as operation is complete or failed
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("failed to delete from blob: %d", resp.StatusCode)

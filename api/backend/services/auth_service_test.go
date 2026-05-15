@@ -26,7 +26,7 @@ func setupTestDB(t *testing.T) (*gorm.DB, *AuthService) {
 		t.Fatalf("falha ao conectar no banco de testes: %v", err)
 	}
 
-	db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{})
+	_ = db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{})
 
 	repo := repositories.NewGormRepository(db)
 	mockEmail := &mockEmailSender{}
@@ -50,7 +50,7 @@ func TestRegister(t *testing.T) {
 		// Mockando usuário verificado
 		user, _ := service.Register("Verified User", "verified@example.com", "Password123!")
 		user.EmailVerified = true
-		service.repo.UpdateUser(user)
+		_ = service.repo.UpdateUser(user)
 
 		_, err := service.Register("Another", "verified@example.com", "NewPass123!")
 		assert.Error(t, err)
@@ -75,7 +75,7 @@ func TestRegisterCooldown(t *testing.T) {
 		// Simulando passagem de tempo (voltando o relógio do banco)
 		user, _ := service.repo.GetUserByEmail(email)
 		user.LastVerificationEmailSentAt = time.Now().Add(-61 * time.Second)
-		service.repo.UpdateUser(user)
+		_ = service.repo.UpdateUser(user)
 
 		// Tentativa após cooldown (deve funcionar)
 		updatedUser, err := service.Register("User Updated", email, "NewPass123!")
@@ -87,7 +87,7 @@ func TestRegisterCooldown(t *testing.T) {
 func TestResendCodeCooldown(t *testing.T) {
 	_, service := setupTestDB(t)
 	email := "resend@example.com"
-	service.Register("User", email, "Pass123!")
+	_, _ = service.Register("User", email, "Pass123!")
 
 	t.Run("Deve impedir reenvio de código antes de 60 segundos", func(t *testing.T) {
 		err := service.ResendVerificationCode(email)
@@ -98,7 +98,7 @@ func TestResendCodeCooldown(t *testing.T) {
 	t.Run("Deve permitir reenvio de código após 60 segundos", func(t *testing.T) {
 		user, _ := service.repo.GetUserByEmail(email)
 		user.LastVerificationEmailSentAt = time.Now().Add(-61 * time.Second)
-		service.repo.UpdateUser(user)
+		_ = service.repo.UpdateUser(user)
 
 		err := service.ResendVerificationCode(email)
 		assert.NoError(t, err)
@@ -108,7 +108,8 @@ func TestResendCodeCooldown(t *testing.T) {
 func TestVerifyEmail(t *testing.T) {
 	_, service := setupTestDB(t)
 	email := "verify@example.com"
-	service.Register("User", email, "Pass123!")
+	_, _ = service.Register("User", email, "Pass123!")
+
 
 	t.Run("Deve falhar com código inválido", func(t *testing.T) {
 		_, err := service.VerifyEmail(email, "123456")

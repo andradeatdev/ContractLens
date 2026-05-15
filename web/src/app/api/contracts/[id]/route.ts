@@ -24,8 +24,8 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
 
@@ -52,8 +52,8 @@ export async function PATCH(
     if (!response.ok) return NextResponse.json({ error: "Failed to update contract" }, { status: response.status });
 
     return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
 
@@ -74,7 +74,7 @@ export async function DELETE(
     if (!response.ok) return NextResponse.json({ error: "Failed to delete contract" }, { status: response.status });
 
     return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

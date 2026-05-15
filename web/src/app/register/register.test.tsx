@@ -26,7 +26,7 @@ describe('RegisterPage', () => {
   });
 
   it('deve avançar para a tela de OTP após registro bem-sucedido', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = global.fetch as vi.Mock;
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true }),
@@ -50,7 +50,7 @@ describe('RegisterPage', () => {
   });
 
   it('deve exibir o botão de reenvio com cooldown desabilitado inicialmente', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = global.fetch as vi.Mock;
     
     mockFetch.mockResolvedValueOnce({
       ok: true,

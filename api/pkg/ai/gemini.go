@@ -34,7 +34,7 @@ func AnalyzeContract(ctx context.Context, contractText string) (*AnalysisResult,
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	model := client.GenerativeModel("gemini-2.5-flash-lite")
 	
@@ -99,7 +99,7 @@ func ChatWithContract(ctx context.Context, contractContent string, history []mod
 	if err != nil {
 		return "", err
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	model := client.GenerativeModel("gemini-2.5-flash-lite")
 

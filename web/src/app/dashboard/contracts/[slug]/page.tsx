@@ -6,12 +6,9 @@ import { DirectionalTransition } from "@/components/view-transition-wrapper";
 import { ChevronRight, Download, Edit2, FileText, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useModal } from "@/components/modal-provider";
-import { useRouter } from "next/navigation";
+import { useContractDetails } from "@/hooks/use-contract-details";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,166 +33,17 @@ import {
 
 export default function ContractDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
-  const modal = useModal();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
-  const { data: contract, isLoading: loading, error: queryError } = useQuery({
-    queryKey: ['contract', resolvedParams.slug],
-    queryFn: async () => {
-      const response = await fetch(`/api/contracts/s/${resolvedParams.slug}`);
-      if (!response.ok) throw new Error("Contrato não encontrado");
-      return response.json();
-    }
-  });
-
-  const error = queryError ? (queryError as Error).message : null;
-
-  const reanalyzeMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/contracts/${id}/reanalyze`, { method: "POST" });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erro ao reanalisar");
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(['contract', resolvedParams.slug], data);
-      toast.success("Análise atualizada", {
-        description: "O documento foi reanalisado com sucesso pela IA."
-      });
-    },
-    onError: (err: any) => {
-      console.error(err);
-      toast.error("Erro na reanálise", {
-        description: err.message
-      });
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/contracts/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Erro ao excluir");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
-      router.push("/dashboard/contracts");
-    },
-    onError: (err) => {
-      console.error(err);
-      modal.alert({
-        title: "Erro",
-        message: "Não foi possível excluir o contrato",
-        type: "destructive"
-      });
-    }
-  });
-
-  const renameMutation = useMutation({
-    mutationFn: async ({ id, newName }: { id: number, newName: string }) => {
-      const response = await fetch(`/api/contracts/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: newName }),
-      });
-      if (!response.ok) throw new Error("Erro ao renomear");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contract', resolvedParams.slug] });
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-    },
-    onError: (err) => {
-      console.error(err);
-      modal.alert({
-        title: "Erro",
-        message: "Não foi possível renomear o contrato",
-        type: "destructive"
-      });
-    }
-  });
-
-  const handleDelete = () => {
-    if (!contract) return;
-    modal.confirm({
-      title: "Excluir contrato",
-      message: "Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita",
-      confirmLabel: "Excluir",
-      type: "destructive",
-      onConfirm: () => deleteMutation.mutate(contract.id)
-    });
-  };
-
-  const handleRename = () => {
-    if (!contract) return;
-    modal.prompt({
-      title: "Renomear contrato",
-      message: "Digite o novo nome para o documento",
-      defaultValue: contract.filename,
-      placeholder: "Ex: Contrato de Aluguel v2",
-      onConfirm: (newName) => {
-        if (!newName || newName === contract.filename) return;
-        renameMutation.mutate({ id: contract.id, newName });
-      }
-    });
-  };
-
-  const handleDownload = async () => {
-    if (!contract) return;
-    try {
-      const response = await fetch(`/api/contracts/${contract.id}/download`);
-      if (!response.ok) throw new Error("Erro ao baixar arquivo");
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = contract.filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleExportAnalysis = async () => {
-    if (!contract) return;
-    try {
-      const response = await fetch(`/api/contracts/${contract.id}/export`);
-      if (!response.ok) throw new Error("Erro ao exportar análise");
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `analise_${contract.slug}.md`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.success("Exportação concluída", {
-        description: "O relatório foi baixado com sucesso."
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao exportar");
-    }
-  };
-
-  const handleReanalyze = () => {
-    if (!contract) return;
-    modal.confirm({
-      title: "Reanalisar documento",
-      message: "Isso executará a análise de IA novamente. Os riscos atuais serão substituídos. Deseja continuar?",
-      confirmLabel: "Sim, reanalisar",
-      onConfirm: () => reanalyzeMutation.mutate(contract.id)
-    });
-  };
+  const { 
+    contract, 
+    isLoading: loading, 
+    error, 
+    isReanalyzing,
+    handleDelete,
+    handleRename,
+    handleDownload,
+    handleExportAnalysis,
+    handleReanalyze 
+  } = useContractDetails(resolvedParams.slug);
 
   if (loading) {
     return (
@@ -295,7 +143,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
                     size="icon"
                     className="rounded-lg text-muted-foreground transition-all cursor-pointer active:scale-90 hover:bg-muted"
                   >
-                    {reanalyzeMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <MoreVertical className="h-5 w-5" />}
+                    {isReanalyzing ? <Loader2 className="h-5 w-5 animate-spin" /> : <MoreVertical className="h-5 w-5" />}
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -318,10 +166,10 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
               <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Análise</div>
               <DropdownMenuItem 
                 onClick={handleReanalyze} 
-                disabled={reanalyzeMutation.isPending}
+                disabled={isReanalyzing}
                 className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted transition-colors"
               >
-                <RefreshCw className={cn("h-4 w-4 text-muted-foreground", reanalyzeMutation.isPending && "animate-spin")} />
+                <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isReanalyzing && "animate-spin")} />
                 Reanalisar agora
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportAnalysis} className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted transition-colors">

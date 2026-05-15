@@ -2,12 +2,12 @@
 
 import { useTheme } from "next-themes";
 import { Moon, Sun, Shield } from "lucide-react";
-import { useEffect, useState, startTransition } from "react";
+import { startTransition } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { addTransitionType } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import {
   Tooltip,
   TooltipContent,
@@ -16,13 +16,9 @@ import {
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHasMounted();
   const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const navigateWithTransition = (href: string, type: 'nav-forward' | 'nav-back') => {
     if (pathname === href) return;
