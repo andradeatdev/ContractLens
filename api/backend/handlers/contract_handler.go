@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/services"
@@ -62,11 +63,65 @@ func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	contract, err := h.service.AnalyzeContract(r.Context(), userID, header.Filename, fileData)
 	if err != nil {
 		log.Printf("Error: AnalyzeContract: %v", err)
-		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		status := http.StatusInternalServerError
+		if strings.Contains(strings.ToLower(err.Error()), "não parece ser um contrato válido") {
+			status = http.StatusBadRequest
+		}
+		SendJSONError(w, err.Error(), status)
 		return
 	}
 
 	SendJSONResponse(w, contract, http.StatusOK)
+}
+
+func (h *ContractHandler) Compare(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request: Compare")
+	if r.Method != http.MethodPost {
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	// Ler ID do contrato base do form
+	baseIDStr := r.FormValue("base_id")
+	if baseIDStr == "" {
+		SendJSONError(w, "ID do contrato base é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	var baseID uint
+	if _, err := fmt.Sscanf(baseIDStr, "%d", &baseID); err != nil {
+		SendJSONError(w, "ID do contrato base inválido", http.StatusBadRequest)
+		return
+	}
+
+	// Ler o novo arquivo PDF
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		SendJSONError(w, "Falha ao ler arquivo do formulário", http.StatusBadRequest)
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	fileData, err := io.ReadAll(file)
+	if err != nil {
+		SendJSONError(w, "Falha ao ler dados do arquivo", http.StatusInternalServerError)
+		return
+	}
+
+	report, err := h.service.CompareContracts(r.Context(), userID, baseID, fileData)
+	if err != nil {
+		log.Printf("Error: CompareContracts: %v", err)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	SendJSONResponse(w, map[string]string{"report": report}, http.StatusOK)
 }
 
 func (h *ContractHandler) Chat(w http.ResponseWriter, r *http.Request) {
@@ -425,4 +480,41 @@ func (h *ContractHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendJSONResponse(w, stats, http.StatusOK)
+}
+
+func (h *ContractHandler) Search(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request: Search Global")
+	if r.Method != http.MethodPost {
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		Query string `json:"query"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		return
+	}
+
+	if req.Query == "" {
+		SendJSONError(w, "A consulta não pode estar vazia", http.StatusBadRequest)
+		return
+	}
+
+	answer, err := h.service.SearchGlobal(r.Context(), userID, req.Query)
+	if err != nil {
+		log.Printf("Error: SearchGlobal: %v", err)
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	SendJSONResponse(w, map[string]string{"answer": answer}, http.StatusOK)
 }

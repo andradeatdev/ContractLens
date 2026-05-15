@@ -21,6 +21,11 @@ type Contract struct {
 	Risks     []Risk         `json:"risks"`
 	Messages  []ChatMessage  `json:"messages"`
 	Notes     []Note         `json:"notes"`
+	// Metadados extraídos
+	TotalValue   string    `json:"total_value"`
+	Expiration   string    `json:"expiration"`
+	Parties      string    `json:"parties"`
+	LegalVenue   string    `json:"legal_venue"`
 }
 
 type Note struct {

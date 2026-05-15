@@ -25,6 +25,8 @@ type AIAnalyzer interface {
 	Analyze(ctx context.Context, text string) (*ai.AnalysisResult, error)
 	Chat(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error)
 	GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
+	Compare(ctx context.Context, baseText, newText string) (string, error)
+	GlobalSearch(ctx context.Context, contextChunks []string, question string) (string, error)
 }
 
 type GeminiAnalyzer struct{}
@@ -41,7 +43,15 @@ func (g *GeminiAnalyzer) GenerateEmbedding(ctx context.Context, text string) ([]
 	return ai.GenerateEmbedding(ctx, text)
 }
 
-type TextExtractor interface {
+func (g *GeminiAnalyzer) Compare(ctx context.Context, baseText, newText string) (string, error) {
+	return ai.CompareContracts(ctx, baseText, newText)
+}
+
+func (g *GeminiAnalyzer) GlobalSearch(ctx context.Context, contextChunks []string, question string) (string, error) {
+	return ai.GlobalSearchChat(ctx, contextChunks, question)
+}
+
+type FileStorage interface {
 	Extract(data []byte) (string, error)
 }
 
@@ -134,6 +144,10 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 		FilePath: filePath,
 		Content:  text,
 		Summary:  analysis.Summary,
+		TotalValue: analysis.TotalValue,
+		Expiration: analysis.Expiration,
+		Parties:    analysis.Parties,
+		LegalVenue: analysis.LegalVenue,
 	}
 
 	for _, r := range analysis.Risks {
@@ -539,4 +553,62 @@ func (s *ContractService) ListActivity(userID uint) ([]ActivityItem, error) {
 	}
 
 	return items, nil
+}
+
+func (s *ContractService) CompareContracts(ctx context.Context, userID uint, baseContractID uint, newPDFData []byte) (string, error) {
+	// 1. Obter contrato base
+	baseContract, err := s.repo.GetByID(baseContractID, userID)
+	if err != nil {
+		return "", fmt.Errorf("contrato base não encontrado: %w", err)
+	}
+
+	// 2. Extrair texto do novo PDF
+	newText, err := s.extractor.Extract(newPDFData)
+	if err != nil {
+		return "", fmt.Errorf("erro ao extrair texto do novo PDF: %w", err)
+	}
+
+	// 3. Chamar IA para comparação
+	report, err := s.ai.Compare(ctx, baseContract.Content, newText)
+	if err != nil {
+		return "", fmt.Errorf("erro na comparação da IA: %w", err)
+	}
+
+	return report, nil
+}
+
+func (s *ContractService) SearchGlobal(ctx context.Context, userID uint, question string) (string, error) {
+	// 1. Gerar embedding da pergunta
+	questionEmbedding, err := s.ai.GenerateEmbedding(ctx, question)
+	if err != nil {
+		return "", fmt.Errorf("erro ao gerar embedding da pergunta: %w", err)
+	}
+
+	// 2. Busca vetorial global (cross-contract)
+	similarChunks, err := s.repo.SearchSimilarChunksGlobal(userID, questionEmbedding, 8)
+	if err != nil {
+		return "", fmt.Errorf("erro na busca semântica global: %w", err)
+	}
+
+	// 3. Preparar contexto com identificação da fonte
+	var contextChunks []string
+	for _, chunk := range similarChunks {
+		filename := "Contrato Desconhecido"
+		if chunk.Contract.Filename != "" {
+			filename = chunk.Contract.Filename
+		}
+		contextChunks = append(contextChunks, fmt.Sprintf("[Fonte: %s]\n%s", filename, chunk.Content))
+	}
+
+	if len(contextChunks) == 0 {
+		return "Não encontrei nenhuma informação relevante nos seus contratos para responder a essa pergunta.", nil
+	}
+
+	// 4. Chamar IA para consolidar resposta
+	answer, err := s.ai.GlobalSearch(ctx, contextChunks, question)
+	if err != nil {
+		return "", fmt.Errorf("erro ao processar busca global com IA: %w", err)
+	}
+
+	return answer, nil
 }

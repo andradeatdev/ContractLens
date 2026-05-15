@@ -141,6 +141,21 @@ func (r *GormRepository) SearchSimilarChunks(contractID uint, embedding []float3
 	return chunks, err
 }
 
+func (r *GormRepository) SearchSimilarChunksGlobal(userID uint, embedding []float32, limit int) ([]models.DocumentChunk, error) {
+	var chunks []models.DocumentChunk
+	
+	err := r.db.Preload("Contract").
+		Joins("JOIN contracts ON contracts.id = document_chunks.contract_id").
+		Where("contracts.user_id = ?", userID).
+		Clauses(clause.OrderBy{
+			Expression: clause.Expr{SQL: "document_chunks.embedding <=> ?", Vars: []interface{}{pgvector.NewVector(embedding)}},
+		}).
+		Limit(limit).
+		Find(&chunks).Error
+		
+	return chunks, err
+}
+
 func (r *GormRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {

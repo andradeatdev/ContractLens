@@ -20,6 +20,7 @@ type Repository interface {
 	CreateChunks(chunks []models.DocumentChunk) error
 	DeleteChunksByContractID(contractID uint) error
 	SearchSimilarChunks(contractID uint, embedding []float32, limit int) ([]models.DocumentChunk, error)
+	SearchSimilarChunksGlobal(userID uint, embedding []float32, limit int) ([]models.DocumentChunk, error)
 
 	// Notas
 	CreateNote(note *models.Note) error

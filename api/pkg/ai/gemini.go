@@ -16,6 +16,10 @@ import (
 type AnalysisResult struct {
 	IsContract bool   `json:"is_contract"`
 	Summary    string `json:"summary"`
+	TotalValue string `json:"total_value"`
+	Expiration string `json:"expiration"`
+	Parties    string `json:"parties"`
+	LegalVenue string `json:"legal_venue"`
 	Risks      []struct {
 		Title       string `json:"title"`
 		Severity    string `json:"severity"`
@@ -46,6 +50,10 @@ Responda APENAS em formato JSON com a seguinte estrutura:
 {
   "is_contract": true|false,
   "summary": "resumo aqui (ou aviso que não é um contrato)",
+  "total_value": "valor total do contrato ou 'não especificado'",
+  "expiration": "data de vencimento ou vigência ou 'indeterminado'",
+  "parties": "nome das partes envolvidas (ex: Empresa A e Empresa B)",
+  "legal_venue": "foro de eleição / cidade para disputas judiciais",
   "risks": [
     {
       "title": "título do risco",
@@ -144,6 +152,108 @@ TRECHOS RELEVANTES DO CONTRATO RECUPERADOS:
 	finalPrompt += fmt.Sprintf("Usuário: %s\nAssistente:", question)
 
 	resp, err := model.GenerateContent(ctx, genai.Text(finalPrompt))
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
+		return "", fmt.Errorf("empty response from AI")
+	}
+
+	var responseText string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if text, ok := part.(genai.Text); ok {
+			responseText += string(text)
+		}
+	}
+
+	return responseText, nil
+}
+
+func CompareContracts(ctx context.Context, baseText, newText string) (string, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("GEMINI_API_KEY not set")
+	}
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	model := client.GenerativeModel("gemini-2.5-flash-lite")
+
+	prompt := fmt.Sprintf(`Você é um especialista em auditoria contratual. Sua tarefa é comparar dois contratos e identificar as diferenças críticas.
+
+CONTRATO BASE (Versão Original):
+---
+%s
+---
+
+NOVO CONTRATO (Versão para Comparação):
+---
+%s
+---
+
+Gere um relatório detalhado em Markdown comparando os dois documentos. Foque em:
+1. **Cláusulas Alteradas:** O que mudou significativamente?
+2. **Novos Riscos:** Existem novas obrigações ou multas que não estavam no original?
+3. **Cláusulas Removidas:** O que foi retirado que pode ser prejudicial?
+4. **Veredito:** O novo contrato é mais ou menos arriscado que o original?
+
+Responda em Português do Brasil com um tom profissional e objetivo.`, baseText, newText)
+
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
+		return "", fmt.Errorf("empty response from AI")
+	}
+
+	var responseText string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if text, ok := part.(genai.Text); ok {
+			responseText += string(text)
+		}
+	}
+
+	return responseText, nil
+}
+
+func GlobalSearchChat(ctx context.Context, contextChunks []string, question string) (string, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("GEMINI_API_KEY not set")
+	}
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	model := client.GenerativeModel("gemini-2.5-flash-lite")
+
+	contextContent := strings.Join(contextChunks, "\n---\n")
+	prompt := fmt.Sprintf(`Você é um assistente inteligente de gestão de contratos. Sua tarefa é responder perguntas baseando-se em TODOS os contratos do usuário.
+
+TRECHOS RELEVANTES DOS CONTRATOS ENCONTRADOS:
+---
+%s
+---
+
+PERGUNTA DO USUÁRIO: %s
+
+Instruções:
+1. Responda de forma clara e objetiva.
+2. Identifique de qual contrato a informação veio (ex: "No contrato [Nome], a cláusula X diz...").
+3. Se a informação não estiver presente nos trechos fornecidos, diga que não encontrou essa informação nos contratos analisados.
+4. Use Português do Brasil.`, contextContent, question)
+
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
 		return "", err
 	}
