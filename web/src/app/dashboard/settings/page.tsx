@@ -155,8 +155,8 @@ export default function SettingsPage() {
                         <input 
                           type="text" 
                           className={cn(
-                            "w-full px-4 py-3 rounded-xl border bg-muted/10 focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all pr-10",
-                            errors.name ? "border-destructive focus:ring-destructive/10" : "border-border"
+                            "w-full px-4 py-3 rounded-xl border bg-muted/10 focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all",
+                            errors.name ? "border-destructive focus:ring-destructive/10 pr-10" : "border-border"
                           )}
                           {...register("name")}
                         />
@@ -176,8 +176,8 @@ export default function SettingsPage() {
                         <input 
                           type="email" 
                           className={cn(
-                            "w-full px-4 py-3 rounded-xl border bg-muted/10 focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all pr-10",
-                            errors.email ? "border-destructive focus:ring-destructive/10" : "border-border"
+                            "w-full px-4 py-3 rounded-xl border bg-muted/10 focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all",
+                            errors.email ? "border-destructive focus:ring-destructive/10 pr-10" : "border-border"
                           )}
                           {...register("email")}
                         />
