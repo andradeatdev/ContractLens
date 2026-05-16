@@ -179,7 +179,11 @@ export default function ContractDetailPage({ params }: { params: Promise<{ slug:
 
               <DropdownMenuSeparator className="bg-border my-1 mx-1" />
               <div className="px-3 py-2 text-[10px] font-bold text-red-500/60 uppercase tracking-wider text-pretty">Zona de Perigo</div>
-              <DropdownMenuItem onClick={handleDelete} className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl focus:bg-muted text-red-500 focus:text-red-600 transition-colors">
+              <DropdownMenuItem 
+                variant="destructive"
+                onClick={handleDelete} 
+                className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold cursor-pointer rounded-xl transition-colors"
+              >
                 <Trash2 className="h-4 w-4" />
                 Excluir contrato
               </DropdownMenuItem>

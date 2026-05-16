@@ -11,7 +11,10 @@ import {
   Trash2, 
   Eye, 
   History,
-  AlertCircle
+  AlertCircle,
+  Edit2,
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { useContractsList } from "@/hooks/use-contracts-list";
 import { cn } from "@/lib/utils";
@@ -59,6 +62,11 @@ export default function ContractsPage() {
     setFilters, 
     resetFilters, 
     handleDelete,
+    handleRename,
+    handleDownload,
+    handleExportAnalysis,
+    handleReanalyze,
+    isReanalyzing,
     refresh 
   } = useContractsList();
 
@@ -258,24 +266,51 @@ export default function ContractsPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-2xl border-border bg-background animate-in fade-in zoom-in-95 duration-100">
-                        <DropdownMenuItem asChild className="rounded-lg text-xs font-bold gap-2 py-2 cursor-pointer">
+                      <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-2xl border-border bg-background animate-in fade-in zoom-in-95 duration-100">
+                        <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Documento</div>
+                        <DropdownMenuItem asChild className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold cursor-pointer focus:bg-muted transition-colors">
                           <Link href={`/dashboard/contracts/s/${contract.slug}`}>
                             <Eye className="h-4 w-4" />
                             Visualizar
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-lg text-xs font-bold gap-2 py-2 cursor-pointer">
+                        <DropdownMenuItem 
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold cursor-pointer focus:bg-muted transition-colors"
+                          onClick={() => handleDownload(contract.id, contract.filename)}
+                        >
                           <Download className="h-4 w-4" />
                           Download PDF
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-lg text-xs font-bold gap-2 py-2 cursor-pointer">
-                          <History className="h-4 w-4" />
-                          Ver Histórico
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-border my-1" />
                         <DropdownMenuItem 
-                          className="rounded-lg text-xs font-bold gap-2 py-2 text-red-500 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold cursor-pointer focus:bg-muted transition-colors"
+                          onClick={() => handleRename(contract.id, contract.filename)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                          Renomear
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuSeparator className="bg-border my-1 mx-1" />
+                        <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Análise</div>
+                        <DropdownMenuItem 
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold cursor-pointer focus:bg-muted transition-colors"
+                          onClick={() => handleReanalyze(contract.id)}
+                          disabled={isReanalyzing}
+                        >
+                          <RefreshCw className={cn("h-4 w-4", isReanalyzing && "animate-spin")} />
+                          Reanalisar agora
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold cursor-pointer focus:bg-muted transition-colors"
+                          onClick={() => handleExportAnalysis(contract.id, contract.slug)}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Exportar análise (.md)
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator className="bg-border my-1 mx-1" />
+                        <DropdownMenuItem 
+                          variant="destructive"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-colors"
                           onClick={() => handleDelete(contract.id, contract.filename)}
                         >
                           <Trash2 className="h-4 w-4" />
