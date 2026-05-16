@@ -50,7 +50,7 @@ func (a *VercelBlobAdapter) Upload(ctx context.Context, filename string, data []
 	// A API do Vercel Blob via HTTP PUT
 	// URL: https://blob.vercel-storage.com/v1/objects/[filename]
 	url := fmt.Sprintf("https://blob.vercel-storage.com/%d_%s", time.Now().UnixNano(), filename)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewReader(data))
 	if err != nil {
 		return "", err

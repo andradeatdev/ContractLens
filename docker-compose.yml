@@ -30,6 +30,8 @@ services:
       INTERNAL_WEB_URL: http://web:3000
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     develop:
@@ -58,6 +60,9 @@ services:
       BACKEND_URL: http://api:8080
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       RESEND_API_KEY: ${RESEND_API_KEY}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      CI: "true"
+    command: sh -c "pnpm approve-builds && pnpm dev"
     volumes:
       - ./web:/app
       - /app/node_modules

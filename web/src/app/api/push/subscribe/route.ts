@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
+const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = (await cookies()).get("auth_token")?.value;
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const subscription = await request.json();
+
+    const response = await fetch(`${backendUrl}/push/subscribe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(subscription),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(error, { status: response.status });
+    }
+
+    return NextResponse.json({ message: "Inscrito com sucesso" });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  }
+}

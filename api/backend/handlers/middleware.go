@@ -3,13 +3,49 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
 	jwt "github.com/golang-jwt/jwt/v5"
 )
+
+var requestCounts = sync.Map{}
+
+func RateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+		now := time.Now()
+
+		// Max 5 requests per 10 seconds
+		val, _ := requestCounts.LoadOrStore(ip, []time.Time{})
+		timestamps := val.([]time.Time)
+
+		var valid []time.Time
+		for _, t := range timestamps {
+			if now.Sub(t) < 10*time.Second {
+				valid = append(valid, t)
+			}
+		}
+
+		if len(valid) >= 5 {
+			SendJSONError(w, "Muitas requisições. Tente novamente mais tarde.", http.StatusTooManyRequests)
+			return
+		}
+
+		valid = append(valid, now)
+		requestCounts.Store(ip, valid)
+
+		next(w, r)
+	}
+}
 
 type contextKey string
 

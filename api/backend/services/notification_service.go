@@ -32,12 +32,14 @@ func NewNotificationService(repo repositories.Repository) *NotificationService {
 }
 
 func (s *NotificationService) SendNotification(userID uint, payload NotificationPayload) {
+	log.Printf("[PUSH] Tentando enviar notificação para userID %d: %+v", userID, payload)
 	subs, err := s.repo.GetPushSubscriptionsByUserID(userID)
 	if err != nil {
 		log.Printf("Erro ao buscar inscrições de push: %v", err)
 		return
 	}
 
+	log.Printf("[PUSH] Encontradas %d inscrições para o usuário", len(subs))
 	if len(subs) == 0 {
 		return
 	}
@@ -50,6 +52,7 @@ func (s *NotificationService) SendNotification(userID uint, payload Notification
 }
 
 func (s *NotificationService) sendToSubscription(sub models.PushSubscription, payload []byte) {
+	log.Printf("[PUSH] Enviando para endpoint: %s", sub.Endpoint)
 	// Decodificar inscrição para o formato do webpush-go
 	subscription := &webpush.Subscription{
 		Endpoint: sub.Endpoint,
@@ -71,6 +74,8 @@ func (s *NotificationService) sendToSubscription(sub models.PushSubscription, pa
 		return
 	}
 	defer resp.Body.Close()
+
+	log.Printf("[PUSH] Resposta do servidor de push: %d", resp.StatusCode)
 
 	// Se o endpoint for inválido, remover do banco
 	if resp.StatusCode == 404 || resp.StatusCode == 410 {

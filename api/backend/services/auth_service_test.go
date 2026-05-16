@@ -110,7 +110,6 @@ func TestVerifyEmail(t *testing.T) {
 	email := "verify@example.com"
 	_, _ = service.Register("User", email, "Pass123!")
 
-
 	t.Run("Deve falhar com código inválido", func(t *testing.T) {
 		_, err := service.VerifyEmail(email, "123456")
 		assert.Error(t, err)
@@ -121,12 +120,12 @@ func TestVerifyEmail(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "Usuário não encontrado", err.Error())
 	})
-	
+
 	t.Run("Deve verificar com sucesso usando Master Code em DEV", func(t *testing.T) {
 		token, err := service.VerifyEmail(email, "000000")
 		assert.NoError(t, err)
 		assert.NotEmpty(t, token)
-		
+
 		updatedUser, _ := service.repo.GetUserByEmail(email)
 		assert.True(t, updatedUser.EmailVerified)
 	})

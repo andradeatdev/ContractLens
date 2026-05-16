@@ -132,7 +132,7 @@ func (r *GormRepository) DeleteChunksByContractID(contractID uint) error {
 
 func (r *GormRepository) SearchSimilarChunks(contractID uint, embedding []float32, limit int) ([]models.DocumentChunk, error) {
 	var chunks []models.DocumentChunk
-	
+
 	// Busca vetorial usando distância de cosseno (oposto de similaridade)
 	// O operador '<=>' no pgvector representa a distância de cosseno.
 	err := r.db.Where("contract_id = ?", contractID).
@@ -141,13 +141,13 @@ func (r *GormRepository) SearchSimilarChunks(contractID uint, embedding []float3
 		}).
 		Limit(limit).
 		Find(&chunks).Error
-		
+
 	return chunks, err
 }
 
 func (r *GormRepository) SearchSimilarChunksGlobal(userID uint, embedding []float32, limit int) ([]models.DocumentChunk, error) {
 	var chunks []models.DocumentChunk
-	
+
 	err := r.db.Preload("Contract").
 		Joins("JOIN contracts ON contracts.id = document_chunks.contract_id").
 		Where("contracts.user_id = ?", userID).
@@ -156,7 +156,7 @@ func (r *GormRepository) SearchSimilarChunksGlobal(userID uint, embedding []floa
 		}).
 		Limit(limit).
 		Find(&chunks).Error
-		
+
 	return chunks, err
 }
 

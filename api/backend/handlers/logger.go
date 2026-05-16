@@ -46,14 +46,14 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 func CanonicalLogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
+
 		// Wrapper para capturar o status code
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-		
+
 		next.ServeHTTP(rw, r)
-		
+
 		duration := time.Since(start)
-		
+
 		// Atributos base do log
 		attrs := []slog.Attr{
 			slog.String("method", r.Method),

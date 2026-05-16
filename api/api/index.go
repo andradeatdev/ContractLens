@@ -6,7 +6,6 @@ import (
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/app"
 )
 
-
 var handler http.Handler
 
 func init() {

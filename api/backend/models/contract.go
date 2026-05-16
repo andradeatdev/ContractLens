@@ -22,10 +22,10 @@ type Contract struct {
 	Messages  []ChatMessage  `json:"messages"`
 	Notes     []Note         `json:"notes"`
 	// Metadados extraídos
-	TotalValue   string    `json:"total_value"`
-	Expiration   string    `json:"expiration"`
-	Parties      string    `json:"parties"`
-	LegalVenue   string    `json:"legal_venue"`
+	TotalValue string `json:"total_value"`
+	Expiration string `json:"expiration"`
+	Parties    string `json:"parties"`
+	LegalVenue string `json:"legal_venue"`
 }
 
 type Note struct {
@@ -39,11 +39,11 @@ type Note struct {
 }
 
 type Risk struct {
-	ID         uint   `gorm:"primaryKey" json:"id"`
-	ContractID uint   `json:"contract_id"`
-	Title      string `json:"title"`
-	Severity   string `json:"severity"` // low, medium, high
-	Clause     string `gorm:"type:text" json:"clause"`
+	ID          uint   `gorm:"primaryKey" json:"id"`
+	ContractID  uint   `json:"contract_id"`
+	Title       string `json:"title"`
+	Severity    string `json:"severity"` // low, medium, high
+	Clause      string `gorm:"type:text" json:"clause"`
 	Explanation string `gorm:"type:text" json:"explanation"`
 }
 
@@ -57,14 +57,14 @@ type ChatMessage struct {
 }
 
 type User struct {
-	ID               uint      `gorm:"primaryKey" json:"id"`
-	Name             string    `json:"name"`
-	Email            string    `gorm:"unique" json:"email"`
-	PasswordHash     string    `json:"-"` // Nunca expor a hash no JSON
-	EmailVerified    bool      `gorm:"default:false" json:"email_verified"`
-	VerificationToken string    `gorm:"index" json:"-"`
-	TokenExpiresAt   time.Time `json:"-"`
+	ID                          uint      `gorm:"primaryKey" json:"id"`
+	Name                        string    `json:"name"`
+	Email                       string    `gorm:"unique" json:"email"`
+	PasswordHash                string    `json:"-"` // Nunca expor a hash no JSON
+	EmailVerified               bool      `gorm:"default:false" json:"email_verified"`
+	VerificationToken           string    `gorm:"index" json:"-"`
+	TokenExpiresAt              time.Time `json:"-"`
 	LastVerificationEmailSentAt time.Time `json:"-"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	CreatedAt                   time.Time `json:"created_at"`
+	UpdatedAt                   time.Time `json:"updated_at"`
 }

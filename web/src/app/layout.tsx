@@ -47,11 +47,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Registrar Service Worker para Push
-  if (typeof window !== "undefined") {
-    registerServiceWorker();
-  }
-
   return (
     <html
       lang="pt-BR"
