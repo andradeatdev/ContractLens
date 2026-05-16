@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function GET(
   request: NextRequest,
@@ -6,15 +7,19 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
-    const authHeader = request.headers.get("Authorization");
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-    console.log(`[Proxy Export] Chamando backend: ${backendUrl}/api/v1/contracts/${id}/export`);
+    if (!token) {
+        return NextResponse.json({ error: "Token de autorização ausente" }, { status: 401 });
+    }
+
+    const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
     const response = await fetch(`${backendUrl}/api/v1/contracts/${id}/export`, {
       method: "GET",
       headers: { 
-        ...(authHeader ? { "Authorization": authHeader } : {})
+        "Authorization": `Bearer ${token}`
       },
     });
 

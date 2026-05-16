@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, CheckCircle2, HelpCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ModalType = "alert" | "confirm" | "prompt";
@@ -121,46 +121,57 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       {children}
       
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
-        <DialogContent className="sm:max-w-md p-6 gap-6">
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background/80 backdrop-blur-xl border border-border shadow-none rounded-[2rem] [&>button]:hidden">
           {options && (
-            <>
-              <DialogHeader className="text-left flex flex-row items-start gap-4 space-y-0">
-                <div className={cn(
-                  "mt-1 rounded-full p-2 shrink-0",
-                  getIconContainerClass()
-                )}>
-                  {getModalIcon()}
-                </div>
-                <div className="space-y-1 pr-4">
+            <div className="p-6 pb-0">
+              <div className="flex justify-between items-start mb-4">
+                  <div className={cn(
+                    "rounded-full p-2 shrink-0",
+                    getIconContainerClass()
+                  )}>
+                    {getModalIcon()}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleCancel}
+                    className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+              </div>
+              <DialogHeader className="text-left space-y-1 pr-4">
                   <DialogTitle className="text-lg font-bold">{options.title}</DialogTitle>
-                  <DialogDescription className="text-sm leading-relaxed">
+                  <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
                     {options.message}
                   </DialogDescription>
-                </div>
               </DialogHeader>
 
               {/* Prompt Input */}
               {modalType === "prompt" && (
-                <div className="w-full px-1">
+                <div className="w-full pt-6">
                   <Input
                     autoFocus
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={options.placeholder}
-                    className="w-full h-10"
+                    className="w-full h-12 rounded-xl bg-background border-border focus:border-primary/50"
                     onKeyDown={(e) => e.key === "Enter" && !isSubmitting && handleConfirm()}
                   />
                 </div>
               )}
+            </div>
+          )}
 
-              {/* Actions Footer */}
-              <DialogFooter className="flex sm:justify-end gap-2 sm:gap-2">
+          {/* Actions Footer */}
+          {options && (
+            <div className="p-6 pt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 bg-muted/20 mt-6">
                 {(modalType === "confirm" || modalType === "prompt") && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={handleCancel}
                     disabled={isSubmitting}
-                    className="h-10 rounded-xl font-bold px-5"
+                    className="h-12 rounded-xl font-bold px-5 hover:bg-muted cursor-pointer"
                   >
                     {options.cancelLabel || "Cancelar"}
                   </Button>
@@ -170,13 +181,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                   variant={options.type === "destructive" ? "destructive" : "default"}
                   onClick={handleConfirm}
                   disabled={isSubmitting || (modalType === "prompt" && !inputValue.trim())}
-                  className="h-10 rounded-xl font-bold px-6 gap-2"
+                  className="h-12 rounded-xl font-bold px-6 gap-2 cursor-pointer shadow-lg shadow-primary/20"
                 >
                   {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {options.confirmLabel || (modalType === "alert" ? "Entendi" : "Confirmar")}
                 </Button>
-              </DialogFooter>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
