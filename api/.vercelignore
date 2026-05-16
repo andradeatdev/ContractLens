@@ -1,0 +1,4 @@
+uploads/
+tmp/
+.air.toml
+*.test.go

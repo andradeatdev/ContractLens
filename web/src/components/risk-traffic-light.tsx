@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { contractAnalysisSchema } from "@/lib/validations/contract-analysis";
 
 interface AnalysisResult {
   severity: "low" | "medium" | "high";
@@ -21,9 +22,16 @@ export function RiskTrafficLight() {
   const [clause, setClause] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
-    if (!clause.trim() || loading) return;
+    setError(null);
+    const result = contractAnalysisSchema.safeParse({ clause });
+    
+    if (!result.success) {
+      setError(result.error.issues[0].message);
+      return;
+    }
 
     setLoading(true);
     setResult(null);
@@ -33,14 +41,13 @@ export function RiskTrafficLight() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clause }),
-      });      if (!response.ok) throw new Error("Falha na análise");
+      });      
+      if (!response.ok) throw new Error("Falha na análise");
 
       const data = await response.json();
-      console.log("API Response:", data);
       setResult(data);
     } catch (error) {
-      console.error(error);
-      // Aqui poderíamos adicionar um toast de erro
+      setError("Erro ao processar análise. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -86,15 +93,19 @@ export function RiskTrafficLight() {
           <div className="relative group">
             <Textarea
               placeholder="Ex: 'Fica eleito o foro da comarca de Dubai para dirimir quaisquer dúvidas...'"
-              className="min-h-[160px] rounded-2xl p-6 bg-muted/30 border-border focus:border-primary/50 transition-all resize-none text-lg"
+              className={cn("min-h-[160px] rounded-2xl p-6 bg-muted/30 border-border focus:border-primary/50 transition-all resize-none text-lg", error && "border-destructive")}
               value={clause}
-              onChange={(e) => setClause(e.target.value)}
+              onChange={(e) => {
+                setClause(e.target.value);
+                if (error) setError(null);
+              }}
               suppressHydrationWarning
             />
+            {error && <p className="text-destructive text-sm mt-2 ml-1 font-bold">{error}</p>}
             <Button
               type="button"
               onClick={handleAnalyze}
-              disabled={loading || !clause.trim()}
+              disabled={loading}
               suppressHydrationWarning
               className="absolute bottom-4 right-4 rounded-xl h-12 px-6 font-bold shadow-lg shadow-primary/20 group cursor-pointer"
             >

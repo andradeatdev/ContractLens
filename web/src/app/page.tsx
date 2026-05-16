@@ -5,7 +5,12 @@ import { DirectionalTransition } from "@/components/view-transition-wrapper";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { RiskTrafficLight } from "@/components/risk-traffic-light";
+import dynamic from "next/dynamic";
+
+const RiskTrafficLight = dynamic(() => import("@/components/risk-traffic-light").then((mod) => mod.RiskTrafficLight), {
+  ssr: true,
+  loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-[2.5rem]" />
+});
 import { SecurityBadge } from "@/components/security-badge";
 import { FadeInUp, FadeInUpWhileInView } from "@/components/landing-animations";
 
@@ -156,6 +161,18 @@ export default function LandingPage() {
         </section>
 
 
+        {/* FAQ Section */}
+        <section id="faq" className="py-24 bg-background border-t border-border">
+          <div className="container px-4 md:px-8 mx-auto max-w-3xl">
+             <h2 className="text-4xl font-black tracking-tight mb-12 text-center">Dúvidas Frequentes</h2>
+             <div className="space-y-6">
+                <FAQItem question="Como saber se um contrato é perigoso?" answer="A Contract Lens analisa pontos críticos como multas abusivas, prazos desproporcionais e obrigações unilaterais, sinalizando-os em nosso semáforo de riscos." />
+                <FAQItem question="A análise é 100% segura?" answer="Nossa ferramenta utiliza IA treinada para identificar padrões de risco. Embora muito precisa, a análise é informativa e sempre recomendamos a validação por um profissional jurídico para decisões de alto impacto." />
+                <FAQItem question="Qual o limite de tamanho para o PDF?" answer="Suportamos arquivos PDF de até 10MB para análise rápida e precisa pela nossa plataforma." />
+             </div>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer className="py-20 border-t border-border bg-background">
           <div className="container px-4 md:px-8 mx-auto">
@@ -244,3 +261,13 @@ function Step({ number, title, description }: { number: string, title: string, d
     </div>
   );
 }
+
+function FAQItem({ question, answer }: { question: string, answer: string }) {
+  return (
+    <div className="border border-border rounded-2xl p-6 bg-muted/20">
+      <h3 className="text-lg font-bold mb-2 text-foreground">{question}</h3>
+      <p className="text-muted-foreground leading-relaxed">{answer}</p>
+    </div>
+  );
+}
+
