@@ -100,12 +100,10 @@ func initDB() *gorm.DB {
 		log.Printf("ERRO na migração do banco: %v", err)
 	}
 
-	// Cria índice HNSW para busca vetorial se o pgvector estiver ativo
-	if os.Getenv("DB_HOST") != "" {
-		// O índice HNSW é mais performático para grandes volumes que o IVFFlat
-		// Usamos vector_cosine_ops pois o RAG usa similaridade de cosseno (<=>)
-		db.Exec("CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding_hnsw ON document_chunks USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)")
-	}
+	// Nota: HNSW e IVFFlat estão limitados a 2000 dimensões no pgvector.
+	// Como nossos embeddings possuem 3072 dimensões, não podemos criar índices vetoriais.
+	// O sistema usará 'Flat search' (sequential scan), que é funcional, porém menos performático em grandes escalas.
+	// Para escalar, considere reduzir a dimensionalidade ou mover a busca vetorial para um banco especializado.
 
 	return db
 }

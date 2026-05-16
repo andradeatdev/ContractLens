@@ -29,15 +29,14 @@ export function RiskTrafficLight() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/proxy?path=/analyze-clause", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clause }),
-      });
-
-      if (!response.ok) throw new Error("Falha na análise");
+      });      if (!response.ok) throw new Error("Falha na análise");
 
       const data = await response.json();
+      console.log("API Response:", data);
       setResult(data);
     } catch (error) {
       console.error(error);
@@ -90,10 +89,13 @@ export function RiskTrafficLight() {
               className="min-h-[160px] rounded-2xl p-6 bg-muted/30 border-border focus:border-primary/50 transition-all resize-none text-lg"
               value={clause}
               onChange={(e) => setClause(e.target.value)}
+              suppressHydrationWarning
             />
             <Button
+              type="button"
               onClick={handleAnalyze}
               disabled={loading || !clause.trim()}
+              suppressHydrationWarning
               className="absolute bottom-4 right-4 rounded-xl h-12 px-6 font-bold shadow-lg shadow-primary/20 group cursor-pointer"
             >
               {loading ? (

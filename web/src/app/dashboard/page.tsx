@@ -1,11 +1,5 @@
-"use client";
-
-import { ContractAnalysis } from "@/components/contract-analysis";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
 import Link from "next/link";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useState, ViewTransition } from "react";
-import { useModal } from "@/components/modal-provider";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -20,78 +14,26 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { StatSection } from "./components/stat-section";
-import { UploadSection } from "./components/upload-section";
-import { ActivitySidebar } from "./components/activity-sidebar";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { AnalysisResult, Stats, Activity } from "@/types";
+import { Suspense } from "react";
+import { StatCardSkeleton } from "./components/stat-section";
+import { DashboardClient } from "./components/dashboard-client";
+import { fetchStats, fetchActivity } from "@/lib/server-api";
+import { Stats, Activity } from "@/types";
 
-export default function DashboardPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const modal = useModal();
-  const queryClient = useQueryClient();
+export const dynamic = "force-dynamic";
 
-  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
-    queryKey: ['stats'],
-    queryFn: async () => {
-      const response = await fetch("/api/stats");
-      if (!response.ok) throw new Error("Falha ao buscar estatísticas");
-      return response.json();
-    }
-  });
-
-  const { data: recentActivity = [], isLoading: activityLoading } = useQuery<Activity[]>({
-    queryKey: ['activity'],
-    queryFn: async () => {
-      const response = await fetch("/api/activity");
-      if (!response.ok) throw new Error("Falha ao buscar atividade");
-      const data = await response.json();
-      return data.slice(0, 3);
-    }
-  });
-
-  const uploadMutation = useMutation<AnalysisResult, Error, File>({
-    mutationFn: async (uploadFile: File) => {
-      const formData = new FormData();
-      formData.append("file", uploadFile);
-
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Falha na análise do contrato");
-      }
-      return data;
-    },
-    onSuccess: (data) => {
-      startTransition(() => {
-        setAnalysis(data);
-      });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
-      queryClient.invalidateQueries({ queryKey: ['activity'] });
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-    },
-    onError: (error) => {
-      console.error("Upload error:", error);
-      modal.alert({
-        title: "Erro na Análise",
-        message: error.message || "Ocorreu um erro ao analisar o contrato.",
-        type: "destructive"
-      });
-    }
-  });
-
-  const formatRelativeTime = (dateStr: string) => {
-    return formatDistanceToNow(new Date(dateStr), {
-      addSuffix: true,
-      locale: ptBR,
-    });
-  };
+export default async function DashboardPage() {
+  let stats: Stats | undefined;
+  let recentActivity: Activity[] = [];
+  
+  try {
+    stats = await fetchStats();
+    recentActivity = await fetchActivity();
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    // Em caso de erro, defaults
+    stats = { total_contracts: 0, total_risks: 0, high_risks: 0 };
+  }
 
   return (
     <DirectionalTransition>
@@ -126,34 +68,17 @@ export default function DashboardPage() {
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="max-w-6xl mx-auto p-8 min-h-full">
-            <ViewTransition default="none" enter="fade-in" exit="fade-out">
-              {!analysis ? (
-                <div className="max-w-4xl mx-auto py-12 space-y-12">
-                  <StatSection stats={stats} loading={statsLoading} />
-
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <UploadSection 
-                      file={file} 
-                      setFile={setFile} 
-                      loading={uploadMutation.isPending} 
-                      onUpload={() => file && uploadMutation.mutate(file)}
-                      onAlert={modal.alert}
-                    />
-
-                    <ActivitySidebar 
-                      recentActivity={recentActivity} 
-                      loading={activityLoading} 
-                      formatRelativeTime={formatRelativeTime} 
-                    />
-                  </div>
+            <Suspense fallback={
+              <div className="max-w-4xl mx-auto py-12 space-y-12">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
                 </div>
-              ) : (
-                <ContractAnalysis
-                  analysis={analysis}
-                  onReset={() => setAnalysis(null)}
-                />
-              )}
-            </ViewTransition>
+              </div>
+            }>
+              <DashboardClient stats={stats} recentActivity={recentActivity} />
+            </Suspense>
           </div>
         </main>
       </div>

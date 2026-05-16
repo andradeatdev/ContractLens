@@ -1,32 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
   try {
-    const token = (await cookies()).get("auth_token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const formData = await req.formData();
-    const file = formData.get("file");
-
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-
+    const body = await req.json();
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
-    const apiFormData = new FormData();
-    apiFormData.append("file", file);
-
-    const response = await fetch(`${backendUrl}/api/v1/contracts`, {
+    const response = await fetch(`${backendUrl}/api/v1/analysis/clauses`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      body: apiFormData,
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

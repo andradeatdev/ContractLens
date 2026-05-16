@@ -181,8 +181,14 @@ func (h *ContractHandler) AnalyzeClause(w http.ResponseWriter, r *http.Request) 
 		SendJSONError(w, err.Error(), http.StatusInternalServerError, "CLAUSE_ANALYSIS_FAILED")
 		return
 	}
-
-	SendJSONResponse(w, result, http.StatusOK)
+	
+	// Garantir serialização correta
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		SendJSONError(w, "Falha ao serializar resposta", http.StatusInternalServerError, "INTERNAL_ERROR")
+		return
+	}
+	// SendJSONResponse(w, result, http.StatusOK) // Removido em favor do Encoder direto
 }
 
 func (h *ContractHandler) List(w http.ResponseWriter, r *http.Request) {

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Contract } from "@/types";
 import { APIError } from "@/lib/api-error";
 
-export function useContractsList() {
+export function useContractsList(initialContracts?: Contract[]) {
   const { contractFilters, setContractFilters, resetContractFilters } = useUIStore();
   const { searchTerm, filterRisk, sortOrder } = contractFilters;
   
@@ -24,7 +24,8 @@ export function useContractsList() {
         throw new APIError(data, response.status);
       }
       return response.json();
-    }
+    },
+    initialData: initialContracts,
   });
 
   const error = queryError ? (queryError as Error).message : null;

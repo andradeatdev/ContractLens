@@ -1,15 +1,13 @@
-"use client";
-
 import { Navbar } from "@/components/navbar";
 import { Shield, FileText, Zap, Search, MessageSquare, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { DirectionalTransition } from "@/components/view-transition-wrapper";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { RiskTrafficLight } from "@/components/risk-traffic-light";
 import { SecurityBadge } from "@/components/security-badge";
+import { FadeInUp, FadeInUpWhileInView } from "@/components/landing-animations";
 
 export default function LandingPage() {
   return (
@@ -21,42 +19,26 @@ export default function LandingPage() {
         <section className="relative overflow-hidden py-24 lg:py-32">
           <div className="container px-4 md:px-8 mx-auto relative z-10">
             <div className="max-w-4xl mx-auto text-center">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mb-8"
-              >
+              <FadeInUp className="mb-8">
                 <Badge variant="secondary" className="px-4 py-1.5 rounded-full bg-primary/10 text-primary border-primary/20 gap-2 font-bold shadow-sm">
                   <Zap className="h-3 w-3 fill-current" aria-hidden="true" />
                   <span>Análise 10× mais rápida</span>
                 </Badge>
-              </motion.div>
+              </FadeInUp>
               
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.95] text-balance"
-              >
-                Pare de assinar <span className="text-primary italic">no escuro</span>.
-              </motion.h1>
+              <FadeInUp delay={0.1}>
+                <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.95] text-balance">
+                  Pare de assinar <span className="text-primary italic">no escuro</span>.
+                </h1>
+              </FadeInUp>
               
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-2xl mx-auto text-pretty"
-              >
-                Nós lemos as letras miúdas para você. Identifique riscos, resuma cláusulas e tire dúvidas com uma IA treinada para proteger seus interesses.
-              </motion.p>
+              <FadeInUp delay={0.2}>
+                <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-2xl mx-auto text-pretty">
+                  Nós lemos as letras miúdas para você. Identifique riscos, resuma cláusulas e tire dúvidas com uma IA treinada para proteger seus interesses.
+                </p>
+              </FadeInUp>
               
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
-              >
+              <FadeInUp delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   asChild
                   size="lg"
@@ -75,7 +57,7 @@ export default function LandingPage() {
                 >
                   <Link href="#how-it-works">Ver como funciona</Link>
                 </Button>
-              </motion.div>
+              </FadeInUp>
 
               <SecurityBadge />
             </div>
@@ -93,14 +75,9 @@ export default function LandingPage() {
         {/* Risk Traffic Light Section */}
         <section id="risk-traffic-light" className="py-24 relative overflow-hidden">
           <div className="container px-4 md:px-8 mx-auto relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-            >
+            <FadeInUpWhileInView duration={0.7}>
               <RiskTrafficLight />
-            </motion.div>
+            </FadeInUpWhileInView>
           </div>
           
           <div className="absolute top-1/2 left-0 -translate-y-1/2 w-64 h-64 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
@@ -235,12 +212,7 @@ export default function LandingPage() {
 
 function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) {
   return (
-    <motion.div 
-      whileInView={{ opacity: 1, y: 0 }}
-      initial={{ opacity: 0, y: 20 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay }}
-    >
+    <FadeInUpWhileInView delay={delay} duration={0.5}>
       <Card className="p-0 rounded-[2.5rem] bg-background border-border shadow-sm hover:shadow-2xl hover:border-primary/20 transition-all duration-300 group relative overflow-hidden h-full">
         <CardContent className="p-10">
           <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-[0.03] transition-opacity">
@@ -255,7 +227,7 @@ function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNod
           </p>
         </CardContent>
       </Card>
-    </motion.div>
+    </FadeInUpWhileInView>
   );
 }
 

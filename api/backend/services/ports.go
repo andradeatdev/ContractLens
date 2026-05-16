@@ -14,27 +14,28 @@ type FileStorage interface {
 }
 
 type AIAnalysisResult struct {
-	IsContract bool
-	Summary    string
-	TotalValue string
-	Expiration string
-	Parties    string
-	LegalVenue string
-	Risks      []AIRisk
+	IsContract bool     `json:"is_contract"`
+	Summary    string   `json:"summary"`
+	TotalValue string   `json:"total_value"`
+	Category   string   `json:"category"`
+	Expiration string   `json:"expiration"`
+	Parties    string   `json:"parties"`
+	LegalVenue string   `json:"legal_venue"`
+	Risks      []AIRisk `json:"risks"`
 }
 
 type AIRisk struct {
-	Title       string
-	Severity    string
-	Explanation string
-	Clause      string
+	Title       string `json:"title"`
+	Severity    string `json:"severity"`
+	Explanation string `json:"explanation"`
+	Clause      string `json:"clause"`
 }
 
 type AIClauseResult struct {
-	Severity    string
-	Title       string
-	Explanation string
-	Suggestion  string
+	Severity    string `json:"severity"`
+	Title       string `json:"title"`
+	Explanation string `json:"explanation"`
+	Suggestion  string `json:"suggestion"`
 }
 
 type AIProvider interface {

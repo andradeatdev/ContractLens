@@ -1,153 +1,98 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import ContractsPage from "./page";
-import React from "react";
-import { Contract } from "@/types";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { ContractsClient } from './client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useUIStore } from '@/lib/store';
 
-// Variáveis hoisted para uso em vi.mock
-const { useUIStoreMock, mockData } = vi.hoisted(() => ({
-  useUIStoreMock: vi.fn(),
-  mockData: [
-    { id: 1, slug: "contrato-1", filename: "Aluguel.pdf", created_at: "2026-01-01T10:00:00Z", risks: [], content: "" },
-    { id: 2, slug: "contrato-2", filename: "Trabalho.pdf", created_at: "2026-02-01T10:00:00Z", risks: [], content: "" }
-  ] as Contract[]
+// Mocks
+vi.mock('next/link', () => ({
+  default: ({ children, href }: any) => <a href={href}>{children}</a>,
 }));
 
-// Mocks do Next.js
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+vi.mock('@/components/modal-provider', () => ({
+  useModal: () => ({
+    confirm: vi.fn(),
+    prompt: vi.fn(),
+    alert: vi.fn(),
+  })
 }));
 
-// Mock do Store dinâmico
-vi.mock("@/lib/store", () => ({
-  useUIStore: useUIStoreMock
-}));
+const mockContracts = [
+  {
+    id: 1,
+    filename: "Aluguel.pdf",
+    slug: "aluguel-123",
+    created_at: new Date().toISOString(),
+    risks: [
+      { id: 1, severity: "high", title: "Risco alto", explanation: "", suggestion: "", clause: "" },
+      { id: 2, severity: "low", title: "Risco baixo", explanation: "", suggestion: "", clause: "" }
+    ]
+  },
+  {
+    id: 2,
+    filename: "Trabalho.pdf",
+    slug: "trabalho-456",
+    created_at: new Date().toISOString(),
+    risks: []
+  }
+];
 
-// Mock do Modal
-vi.mock("@/components/modal-provider", () => ({
-  useModal: () => ({ alert: vi.fn(), confirm: vi.fn(), prompt: vi.fn() }),
-  ModalProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
+// Sobrescrevendo global fetch para mockar API call
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(mockContracts),
+  })
+) as jest.Mock;
 
-// Mock do View Transition
-vi.mock("@/components/view-transition-wrapper", () => ({
-  DirectionalTransition: ({ children }: { children: React.ReactNode }) => children,
-}));
+describe('ContractsClient', () => {
+  let queryClient: QueryClient;
 
-// Mock de React Query
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: () => ({
-    data: mockData,
-    isLoading: false,
-    error: null
-  }),
-  useMutation: () => ({ mutate: vi.fn() }),
-  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-  QueryClient: class { defaultOptions = {}; },
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-// Mock robusto de Lucide Icons para evitar quebras por ícones ausentes
-vi.mock("lucide-react", async (importOriginal) => {
-  const actual = await importOriginal<typeof import('lucide-react')>();
-  return {
-    ...actual,
-    RefreshCw: () => <span data-testid="icon-refresh" />,
-    Search: () => <span />,
-    Filter: () => <span />,
-    FileText: () => <span />,
-    MoreVertical: () => <span />,
-    MoreHorizontal: () => <span />,
-    AlertCircle: () => <span />,
-    ChevronRight: () => <span />,
-    Download: () => <span />,
-    Edit2: () => <span />,
-    Eye: () => <span />,
-    Trash2: () => <span />,
-    Loader2: () => <span />,
-    History: () => <span />,
-  };
-});
-
-// Mock de componentes Radix/Shadcn
-vi.mock("@/components/ui/breadcrumb", () => ({
-  Breadcrumb: ({ children }: { children: React.ReactNode }) => <nav>{children}</nav>,
-  BreadcrumbList: ({ children }: { children: React.ReactNode }) => <ol>{children}</ol>,
-  BreadcrumbItem: ({ children }: { children: React.ReactNode }) => <li>{children}</li>,
-  BreadcrumbLink: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  BreadcrumbSeparator: () => <span>/</span>,
-  BreadcrumbPage: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
-}));
-
-vi.mock("@/components/ui/dropdown-menu", () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuSeparator: () => <hr />,
-}));
-
-vi.mock("@/components/ui/popover", () => ({
-  Popover: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PopoverTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PopoverContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
-vi.mock("@/components/ui/tooltip", () => ({
-  TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-describe("ContractsPage", () => {
   beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+    useUIStore.setState({
+      contractFilters: {
+        searchTerm: '',
+        filterRisk: 'all',
+        sortOrder: 'newest'
+      }
+    });
     vi.clearAllMocks();
-    // Default store state
-    useUIStoreMock.mockReturnValue({
-      contractFilters: { searchTerm: "", filterRisk: "all", sortOrder: "newest" },
-      setContractFilters: vi.fn(),
-      resetContractFilters: vi.fn(),
+  });
+
+  const TestWrapper = () => (
+    <QueryClientProvider client={queryClient}>
+      <ContractsClient initialContracts={mockContracts} />
+    </QueryClientProvider>
+  );
+
+  it('deve renderizar a lista de contratos', async () => {
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Meus Contratos")).toBeInTheDocument();
+      expect(screen.getByText("Aluguel.pdf")).toBeInTheDocument();
+      expect(screen.getByText("Trabalho.pdf")).toBeInTheDocument();
     });
   });
 
-  it("deve renderizar a lista de contratos", async () => {
-    render(<ContractsPage />);
-
-    expect(screen.getByText("Meus Contratos")).toBeInTheDocument();
-    expect(screen.getByText("Aluguel.pdf")).toBeInTheDocument();
-    expect(screen.getByText("Trabalho.pdf")).toBeInTheDocument();
-  });
-
-  it("deve filtrar contratos por termo de busca", async () => {
-    // Usamos um componente wrapper para simular a mudança de estado no store
-    const TestWrapper = () => {
-      const [searchTerm, setSearchTerm] = React.useState("");
-      useUIStoreMock.mockReturnValue({
-        contractFilters: { searchTerm, filterRisk: "all", sortOrder: "newest" },
-        setContractFilters: (updates: { searchTerm?: string }) => {
-          if (updates.searchTerm !== undefined) setSearchTerm(updates.searchTerm);
-        },
-        resetContractFilters: vi.fn(),
-      });
-      return <ContractsPage />;
-    };
-
+  it('deve filtrar contratos por termo de busca', async () => {
     render(<TestWrapper />);
 
     await waitFor(() => {
       expect(screen.getByText("Aluguel.pdf")).toBeInTheDocument();
-      expect(screen.getByText("Trabalho.pdf")).toBeInTheDocument();
     });
 
     const searchInput = screen.getByPlaceholderText("Buscar por nome...");
-    fireEvent.change(searchInput, { target: { value: "Aluguel" } });
-
-    expect(searchInput).toHaveValue("Aluguel");
+    fireEvent.change(searchInput, { target: { value: 'trabalho' } });
 
     await waitFor(() => {
-      expect(screen.queryByText("Trabalho.pdf")).not.toBeInTheDocument();
+      expect(screen.getByText("Trabalho.pdf")).toBeInTheDocument();
+      expect(screen.queryByText("Aluguel.pdf")).not.toBeInTheDocument();
     });
-    expect(screen.getByText("Aluguel.pdf")).toBeInTheDocument();
   });
 });
