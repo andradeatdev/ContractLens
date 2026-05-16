@@ -47,22 +47,27 @@ vi.mock("@tanstack/react-query", () => ({
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// Mock simplificado de Lucide Icons
-vi.mock("lucide-react", () => ({
-  Search: () => <span />,
-  Filter: () => <span />,
-  FileText: () => <span />,
-  MoreVertical: () => <span />,
-  MoreHorizontal: () => <span />,
-  AlertCircle: () => <span />,
-  ChevronRight: () => <span />,
-  Download: () => <span />,
-  Edit2: () => <span />,
-  Eye: () => <span />,
-  Trash2: () => <span />,
-  Loader2: () => <span />,
-  History: () => <span />,
-}));
+// Mock robusto de Lucide Icons para evitar quebras por ícones ausentes
+vi.mock("lucide-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import('lucide-react')>();
+  return {
+    ...actual,
+    RefreshCw: () => <span data-testid="icon-refresh" />,
+    Search: () => <span />,
+    Filter: () => <span />,
+    FileText: () => <span />,
+    MoreVertical: () => <span />,
+    MoreHorizontal: () => <span />,
+    AlertCircle: () => <span />,
+    ChevronRight: () => <span />,
+    Download: () => <span />,
+    Edit2: () => <span />,
+    Eye: () => <span />,
+    Trash2: () => <span />,
+    Loader2: () => <span />,
+    History: () => <span />,
+  };
+});
 
 // Mock de componentes Radix/Shadcn
 vi.mock("@/components/ui/breadcrumb", () => ({
