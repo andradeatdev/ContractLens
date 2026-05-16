@@ -327,6 +327,10 @@ class SecurityScanner:
 
     def _is_false_positive(self, line: str, file_path: str) -> bool:
         """Check if finding is likely a false positive."""
+        # Skip if 'nosec' comment is present
+        if 'nosec' in line.lower():
+            return True
+
         # Skip comments
         stripped = line.strip()
         if stripped.startswith('#') or stripped.startswith('//') or stripped.startswith('*'):

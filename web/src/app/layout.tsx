@@ -67,12 +67,10 @@ export default function RootLayout({
           showSpinner={false}
           height={3}
         />
-        {/* nosec: JSON-LD is static and safe */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({ // nosec: JSON-LD is static and safe
+            "@context": "https://schema.org",
               "@type": "SoftwareApplication",
               "name": "Contract Lens",
               "operatingSystem": "Web",

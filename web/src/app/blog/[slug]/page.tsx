@@ -49,10 +49,9 @@ export default function BlogPostPage() {
           </div>
         </header>
 
-        {/* nosec: Blog content is currently static and trusted */}
         <div 
           className="prose prose-lg dark:prose-invert max-w-none text-foreground/90"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: post.content }} // nosec: Blog content is currently static and trusted
         />
 
         <footer className="mt-16 pt-8 border-t border-border/50 text-center">
