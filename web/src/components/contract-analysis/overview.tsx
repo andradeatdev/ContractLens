@@ -101,7 +101,7 @@ export function ContractOverview({
         onOpenChange={setIsCompareOpen}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MetadataCard 
           icon={<DollarSign className="h-4 w-4 text-emerald-500" />}
           label="Valor Total"
@@ -129,14 +129,14 @@ export function ContractOverview({
 
 function MetadataCard({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
-    <Card className="border-border/40 bg-background/50 backdrop-blur-sm">
-      <CardContent className="p-4 flex items-center gap-4">
-        <div className="p-2.5 rounded-xl bg-muted/50 border border-border/20">
+    <Card className="border-border/40 bg-background/50 backdrop-blur-sm hover:border-primary/20 transition-colors">
+      <CardContent className="p-5 flex flex-col gap-4">
+        <div className="p-2.5 rounded-xl bg-muted/50 border border-border/20 w-fit">
           {icon}
         </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-0.5">{label}</p>
-          <p className="text-sm font-semibold truncate leading-none">{value}</p>
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{label}</p>
+          <p className="text-sm font-bold text-foreground leading-snug break-words">{value}</p>
         </div>
       </CardContent>
     </Card>

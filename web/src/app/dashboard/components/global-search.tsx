@@ -70,15 +70,15 @@ export function GlobalSearch() {
           className="text-muted-foreground hover:bg-background hover:text-foreground h-12"
         >
           <Search className="shrink-0 size-5" />
-          <span>Busca Inteligente</span>
-          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+          <span className="group-data-[collapsible=icon]:hidden">Busca Inteligente</span>
+          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 group-data-[collapsible=icon]:hidden">
             <span className="text-xs">⌘</span>K
           </kbd>
         </SidebarMenuButton>
       </SidebarMenuItem>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl shadow-primary/10">
+        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl shadow-primary/10 gap-0">
           <DialogHeader className="p-4 border-b bg-muted/20">
             <div className="flex items-center gap-2 mb-1">
               <div className="bg-primary/10 p-1.5 rounded-lg">
@@ -96,14 +96,16 @@ export function GlobalSearch() {
                 autoFocus
               />
               {query && !loading && (
-                <Button 
-                  type="submit" 
-                  size="icon" 
-                  variant="ghost" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 rounded-lg hover:bg-primary/5 text-primary"
-                >
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
+                <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                  <Button 
+                    type="submit" 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-10 w-10 rounded-lg hover:bg-primary/15 hover:scale-105 active:bg-primary/25 text-primary active:!translate-y-0 transition-all duration-200"
+                  >
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </div>
               )}
               {loading && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -137,8 +139,8 @@ export function GlobalSearch() {
                   className="space-y-4"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="bg-primary p-2 rounded-xl mt-1 shrink-0">
-                      <MessageSquare className="h-4 w-4 text-white" />
+                    <div className="bg-primary/10 p-2 rounded-xl mt-1 shrink-0 border border-primary/20">
+                      <MessageSquare className="h-4 w-4 text-primary" />
                     </div>
                     <div className="space-y-4 text-sm leading-relaxed text-foreground/90">
                       {answer.split('\n').map((paragraph, i) => (

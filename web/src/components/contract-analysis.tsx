@@ -96,7 +96,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contract_id: analysis.id,
+          contract_slug: analysis.slug,
           message: userMessage,
           history: messages
         }),
@@ -124,7 +124,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contract_id: analysis.id,
+          contract_slug: analysis.slug,
           ...newNote
         }),
       });
@@ -178,7 +178,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
   });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative pb-20">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
       <SelectionPopover 
         selection={selection}
         isOpen={isNotePopoverOpen}
@@ -255,7 +255,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
         className={cn(
           "lg:col-span-5 flex flex-col transition-all border-border/50 shadow-2xl shadow-primary/5 overflow-hidden",
           "h-[600px] lg:h-[calc(100dvh-10rem)] lg:max-h-[850px]",
-          "lg:sticky lg:top-8 self-start"
+          "lg:sticky lg:top-0 self-start"
         )}
       >
         <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">

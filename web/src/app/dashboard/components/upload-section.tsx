@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Upload, FileText, Trash2, Zap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,55 @@ interface UploadSectionProps {
 }
 
 export function UploadSection({ file, setFile, loading, onUpload, onAlert }: UploadSectionProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFile = (selectedFile: File | null) => {
+    if (!selectedFile) return;
+
+    if (selectedFile.type !== "application/pdf") {
+      onAlert({
+        title: "Tipo de arquivo inválido",
+        message: "Por favor, selecione apenas arquivos PDF",
+        type: "destructive"
+      });
+      return;
+    }
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      onAlert({
+        title: "Arquivo muito grande",
+        message: "O limite máximo permitido é de 10MB",
+        type: "destructive"
+      });
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!loading) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (loading) return;
+
+    const droppedFile = e.dataTransfer.files?.[0] || null;
+    handleFile(droppedFile);
+  };
+
   return (
     <div className="lg:col-span-2 space-y-8">
       <div className="text-left">
@@ -23,9 +72,14 @@ export function UploadSection({ file, setFile, loading, onUpload, onAlert }: Upl
       </div>
 
       <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className={cn(
           "border-2 border-dashed rounded-[2.5rem] p-16 text-center transition-all duration-500 relative overflow-hidden group",
-          file ? "bg-primary/5 border-primary/40 shadow-2xl shadow-primary/5" : "hover:border-primary/40 hover:bg-background border-border bg-muted/30 shadow-sm"
+          isDragging ? "bg-primary/10 border-primary scale-[1.02] shadow-2xl shadow-primary/20" : "",
+          !isDragging && file ? "bg-primary/5 border-primary/40 shadow-2xl shadow-primary/5" : "",
+          !isDragging && !file ? "hover:border-primary/40 hover:bg-background border-border bg-muted/30 shadow-sm" : ""
         )}
       >
         <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-5 transition-opacity">
@@ -34,9 +88,9 @@ export function UploadSection({ file, setFile, loading, onUpload, onAlert }: Upl
 
         <div className={cn(
           "bg-primary/10 p-6 rounded-[2rem] w-fit mx-auto mb-8 transition-transform duration-500",
-          file ? "rotate-12 bg-primary" : ""
+          file || isDragging ? "rotate-12 bg-primary" : ""
         )}>
-          <Upload className={cn("h-12 w-12", file ? "text-primary-foreground" : "text-primary")} />
+          <Upload className={cn("h-12 w-12", file || isDragging ? "text-primary-foreground" : "text-primary")} />
         </div>
 
         <input
@@ -44,16 +98,8 @@ export function UploadSection({ file, setFile, loading, onUpload, onAlert }: Upl
           accept=".pdf"
           onChange={(e) => {
             const selectedFile = e.target.files?.[0] || null;
-            if (selectedFile && selectedFile.size > 10 * 1024 * 1024) {
-              onAlert({
-                title: "Arquivo muito grande",
-                message: "O limite máximo permitido é de 10MB",
-                type: "destructive"
-              });
-              e.target.value = ""; // Limpa o input
-              return;
-            }
-            setFile(selectedFile);
+            handleFile(selectedFile);
+            e.target.value = ""; // Limpa o input para permitir selecionar o mesmo arquivo novamente
           }}
           className="hidden"
           id="dashboardFile"

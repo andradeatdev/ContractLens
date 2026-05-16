@@ -44,7 +44,7 @@ export function ContractRisks({ risks }: ContractRisksProps) {
           <Card key={i} className="hover:border-primary/20 transition-all">
             <CardContent className="pt-6">
               <div className="flex justify-between items-start gap-4 mb-3">
-                <h4 className="text-sm font-bold text-foreground leading-tight">{risk.category}</h4>
+                <h4 className="text-sm font-bold text-foreground leading-tight">{risk.title}</h4>
                 <Badge variant="secondary" className={cn(
                   "text-[10px] font-bold px-2 py-0.5 rounded shadow-none border-none shrink-0 uppercase tracking-tighter",
                   getRiskBadgeClass(risk.severity)
@@ -53,12 +53,12 @@ export function ContractRisks({ risks }: ContractRisksProps) {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                {risk.description}
+                {risk.explanation}
               </p>
-              {risk.mitigation && (
-                <div className="relative p-3 rounded-lg bg-muted/30 border border-border text-[11px] text-muted-foreground italic font-mono">
+              {risk.clause && (
+                <div className="relative p-3 rounded-lg bg-muted/30 border border-border text-[11px] text-muted-foreground italic">
                   <div className="absolute top-0 left-0 w-0.5 h-full bg-primary/20" />
-                  &quot;{risk.mitigation}&quot;
+                  &quot;{risk.clause}&quot;
                 </div>
               )}
             </CardContent>

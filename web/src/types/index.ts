@@ -4,10 +4,9 @@ export interface ContractRisk {
   id: number;
   contract_id: number;
   severity: RiskSeverity;
-  category: string;
-  description: string;
-  mitigation: string;
-  impact: string;
+  title: string;
+  clause: string;
+  explanation: string;
 }
 
 export interface Message {
