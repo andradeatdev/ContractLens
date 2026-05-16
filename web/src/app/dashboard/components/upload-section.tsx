@@ -67,8 +67,8 @@ export function UploadSection({ file, setFile, loading, onUpload, onAlert }: Upl
   return (
     <div className="lg:col-span-2 space-y-8">
       <div className="text-left">
-        <h2 className="text-3xl font-bold mb-3 tracking-tight">Nova análise</h2>
-        <p className="text-muted-foreground">Envie seu contrato em PDF para começar a análise inteligente.</p>
+        <h2 className="text-3xl font-bold mb-3 tracking-tight">O que vamos analisar hoje?</h2>
+        <p className="text-muted-foreground">Envie seu contrato em PDF e deixe a IA cuidar da parte chata.</p>
       </div>
 
       <div

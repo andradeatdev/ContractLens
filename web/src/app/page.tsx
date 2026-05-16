@@ -8,6 +8,7 @@ import { DirectionalTransition } from "@/components/view-transition-wrapper";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { RiskTrafficLight } from "@/components/risk-traffic-light";
 
 export default function LandingPage() {
   return (
@@ -37,7 +38,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.95] text-balance"
               >
-                Entenda seus <span className="text-primary italic">contratos</span> em segundos.
+                Pare de assinar <span className="text-primary italic">no escuro</span>.
               </motion.h1>
               
               <motion.p 
@@ -46,7 +47,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-2xl mx-auto text-pretty"
               >
-                Nossa inteligência artificial analisa cada cláusula para você, destacando riscos ocultos e traduzindo o juridiquês em linguagem clara.
+                Nós lemos as letras miúdas para você. Identifique riscos, resuma cláusulas e tire dúvidas com uma IA treinada para proteger seus interesses.
               </motion.p>
               
               <motion.div 
@@ -86,6 +87,23 @@ export default function LandingPage() {
           <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-background to-transparent" />
         </section>
 
+        {/* Risk Traffic Light Section */}
+        <section id="risk-traffic-light" className="py-24 relative overflow-hidden">
+          <div className="container px-4 md:px-8 mx-auto relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+            >
+              <RiskTrafficLight />
+            </motion.div>
+          </div>
+          
+          <div className="absolute top-1/2 left-0 -translate-y-1/2 w-64 h-64 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+        </section>
+
         {/* Features Section */}
         <section id="features" className="py-32 bg-muted/30 relative">
           <div className="container px-4 md:px-8 mx-auto">
@@ -98,20 +116,20 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <FeatureCard 
                 icon={<Search className="h-8 w-8 text-primary" aria-hidden="true" />}
-                title="Olhar clínico para riscos"
-                description="Identificamos na hora multas abusivas ou obrigações ocultas que podem prejudicar seu negócio."
+                title="Detectamos o que ninguém vê"
+                description="Multas abusivas, prazos impossíveis ou obrigações ocultas. Nada passa despercebido pelo nosso olhar clínico."
                 delay={0.1}
               />
               <FeatureCard 
                 icon={<FileText className="h-8 w-8 text-primary" aria-hidden="true" />}
-                title="Resumo direto ao ponto"
-                description="Esqueça o juridiquês. Traduzimos tudo para uma linguagem humana e fácil de entender."
+                title="Juridiquês traduzido"
+                description="Esqueça a complexidade. Transformamos cláusulas densas em explicações simples e acionáveis para o seu dia a dia."
                 delay={0.2}
               />
               <FeatureCard 
                 icon={<MessageSquare className="h-8 w-8 text-primary" aria-hidden="true" />}
-                title="Tire suas dúvidas na hora"
-                description="Converse com nosso assistente para entender detalhes específicos ou pedir dicas de negociação."
+                title="Um especialista ao seu lado"
+                description="Converse com o assistente para entender detalhes específicos ou pedir dicas de negociação em tempo real."
                 delay={0.3}
               />
             </div>

@@ -23,13 +23,13 @@ func NewContractHandler(service *services.ContractService) *ContractHandler {
 func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request: Upload")
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -41,7 +41,7 @@ func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error: FormFile: %v", err)
 		if err.Error() == "http: request body too large" {
-			SendJSONError(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
+			SendJSONError(w, "Ops! Este arquivo é grande demais. O limite é de 10MB.", http.StatusRequestEntityTooLarge)
 		} else {
 			SendJSONError(w, "Falha ao ler arquivo do formulário", http.StatusBadRequest)
 		}
@@ -50,7 +50,7 @@ func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	defer func() { _ = file.Close() }()
 
 	if header.Size > 10*1024*1024 {
-		SendJSONError(w, "Arquivo muito grande. O limite máximo é 10MB", http.StatusRequestEntityTooLarge)
+		SendJSONError(w, "Ops! Este arquivo é grande demais. O limite é de 10MB.", http.StatusRequestEntityTooLarge)
 		return
 	}
 
@@ -78,13 +78,13 @@ func (h *ContractHandler) Upload(w http.ResponseWriter, r *http.Request) {
 func (h *ContractHandler) Compare(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request: Compare")
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -127,13 +127,13 @@ func (h *ContractHandler) Compare(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContractHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -156,15 +156,42 @@ func (h *ContractHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	SendJSONResponse(w, map[string]string{"answer": answer}, http.StatusOK)
 }
 
+func (h *ContractHandler) AnalyzeClause(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Limitar corpo da requisição para 1MB (segurança para endpoint público)
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+
+	var req struct {
+		Clause string `json:"clause"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		return
+	}
+
+	result, err := h.service.AnalyzeClause(r.Context(), req.Clause)
+	if err != nil {
+		SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	SendJSONResponse(w, result, http.StatusOK)
+}
+
 func (h *ContractHandler) List(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -179,13 +206,13 @@ func (h *ContractHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContractHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -212,13 +239,13 @@ func (h *ContractHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContractHandler) DeleteNote(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodDelete {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -232,13 +259,13 @@ func (h *ContractHandler) DeleteNote(w http.ResponseWriter, r *http.Request, id 
 
 func (h *ContractHandler) GetByID(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodGet {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -253,13 +280,13 @@ func (h *ContractHandler) GetByID(w http.ResponseWriter, r *http.Request, id uin
 
 func (h *ContractHandler) Reanalyze(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -276,7 +303,7 @@ func (h *ContractHandler) Reanalyze(w http.ResponseWriter, r *http.Request, id u
 func (h *ContractHandler) ExportAnalysis(w http.ResponseWriter, r *http.Request, id uint) {
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -293,13 +320,13 @@ func (h *ContractHandler) ExportAnalysis(w http.ResponseWriter, r *http.Request,
 
 func (h *ContractHandler) GetBySlug(w http.ResponseWriter, r *http.Request, slug string) {
 	if r.Method != http.MethodGet {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -316,13 +343,13 @@ func (h *ContractHandler) GetBySlug(w http.ResponseWriter, r *http.Request, slug
 
 func (h *ContractHandler) Update(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -344,13 +371,13 @@ func (h *ContractHandler) Update(w http.ResponseWriter, r *http.Request, id uint
 
 func (h *ContractHandler) Delete(w http.ResponseWriter, r *http.Request, id uint) {
 	if r.Method != http.MethodDelete {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -365,7 +392,7 @@ func (h *ContractHandler) Delete(w http.ResponseWriter, r *http.Request, id uint
 func (h *ContractHandler) Download(w http.ResponseWriter, r *http.Request, id uint) {
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -395,13 +422,13 @@ func (h *ContractHandler) Download(w http.ResponseWriter, r *http.Request, id ui
 
 func (h *ContractHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -416,13 +443,13 @@ func (h *ContractHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContractHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut && r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -443,13 +470,13 @@ func (h *ContractHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContractHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -464,13 +491,13 @@ func (h *ContractHandler) Activity(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContractHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
@@ -486,13 +513,13 @@ func (h *ContractHandler) Stats(w http.ResponseWriter, r *http.Request) {
 func (h *ContractHandler) Search(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request: Search Global")
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Essa ação não é permitida por este caminho.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Não autorizado", http.StatusUnauthorized)
+		SendJSONError(w, "Você precisa estar logado para acessar este recurso.", http.StatusUnauthorized)
 		return
 	}
 
