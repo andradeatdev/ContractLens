@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { RiskTrafficLight } from "@/components/risk-traffic-light";
+import { SecurityBadge } from "@/components/security-badge";
 
 export default function LandingPage() {
   return (
@@ -75,6 +76,8 @@ export default function LandingPage() {
                   <Link href="#how-it-works">Ver como funciona</Link>
                 </Button>
               </motion.div>
+
+              <SecurityBadge />
             </div>
           </div>
           

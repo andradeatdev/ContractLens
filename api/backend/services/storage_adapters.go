@@ -22,7 +22,9 @@ func (a *LocalStorageAdapter) Upload(ctx context.Context, filename string, data 
 		return "", err
 	}
 
-	uniqueFilename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filename)
+	// Sanitize filename to prevent path traversal
+	safeFilename := filepath.Base(filename)
+	uniqueFilename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), safeFilename)
 	filePath := filepath.Join(a.UploadDir, uniqueFilename)
 
 	if err := os.WriteFile(filePath, data, 0600); err != nil {
@@ -47,9 +49,12 @@ type VercelBlobAdapter struct {
 }
 
 func (a *VercelBlobAdapter) Upload(ctx context.Context, filename string, data []byte) (string, error) {
+	// Sanitize filename
+	safeFilename := filepath.Base(filename)
+
 	// A API do Vercel Blob via HTTP PUT
 	// URL: https://blob.vercel-storage.com/v1/objects/[filename]
-	url := fmt.Sprintf("https://blob.vercel-storage.com/%d_%s", time.Now().UnixNano(), filename)
+	url := fmt.Sprintf("https://blob.vercel-storage.com/%d_%s", time.Now().UnixNano(), safeFilename)
 
 	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewReader(data))
 	if err != nil {

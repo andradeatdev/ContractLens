@@ -52,6 +52,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Run Gosec (Backend SAST)
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -fmt=json -out=gosec_results.json ./api/... || true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

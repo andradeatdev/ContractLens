@@ -23,6 +23,8 @@ import {
 import { StatSection } from "./components/stat-section";
 import { UploadSection } from "./components/upload-section";
 import { ActivitySidebar } from "./components/activity-sidebar";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { AnalysisResult, Stats, Activity } from "@/types";
 
 export default function DashboardPage() {
@@ -85,20 +87,9 @@ export default function DashboardPage() {
   });
 
   const formatRelativeTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMins = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-
-    if (diffInMins < 1) return "agora mesmo";
-    if (diffInMins < 60) return `há ${diffInMins} min`;
-    if (diffInHours < 24) return `há ${diffInHours} ${diffInHours === 1 ? 'hora' : 'horas'}`;
-    
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return formatDistanceToNow(new Date(dateStr), {
+      addSuffix: true,
+      locale: ptBR,
     });
   };
 

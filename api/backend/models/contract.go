@@ -40,7 +40,7 @@ type Note struct {
 
 type Risk struct {
 	ID          uint   `gorm:"primaryKey" json:"id"`
-	ContractID  uint   `json:"contract_id"`
+	ContractID  uint   `gorm:"index" json:"contract_id"`
 	Title       string `json:"title"`
 	Severity    string `json:"severity"` // low, medium, high
 	Clause      string `gorm:"type:text" json:"clause"`
@@ -49,7 +49,7 @@ type Risk struct {
 
 type ChatMessage struct {
 	ID         uint      `gorm:"primaryKey" json:"id"`
-	ContractID uint      `json:"contract_id"`
+	ContractID uint      `gorm:"index" json:"contract_id"`
 	Contract   Contract  `gorm:"foreignKey:ContractID" json:"-"`
 	Role       string    `json:"role"` // user, assistant
 	Message    string    `gorm:"type:text" json:"message"`

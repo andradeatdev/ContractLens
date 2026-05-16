@@ -66,6 +66,7 @@ func initDB() *gorm.DB {
 		)
 		log.Printf("Conectando ao banco: %s", maskedDSN)
 
+		// #nosec G101 - Credentials are retrieved from environment variables, not hardcoded.
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 			os.Getenv("DB_HOST"),
 			os.Getenv("DB_USER"),
@@ -97,6 +98,13 @@ func initDB() *gorm.DB {
 	)
 	if err != nil {
 		log.Printf("ERRO na migração do banco: %v", err)
+	}
+
+	// Cria índice HNSW para busca vetorial se o pgvector estiver ativo
+	if os.Getenv("DB_HOST") != "" {
+		// O índice HNSW é mais performático para grandes volumes que o IVFFlat
+		// Usamos vector_cosine_ops pois o RAG usa similaridade de cosseno (<=>)
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding_hnsw ON document_chunks USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)")
 	}
 
 	return db

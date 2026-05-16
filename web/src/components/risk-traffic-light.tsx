@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, CheckCircle2, Info, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,6 +135,15 @@ export function RiskTrafficLight() {
                     <p className="p-4 rounded-xl bg-background/50 border border-current/10">
                       <strong>💡 Sugestão:</strong> {result.suggestion}
                     </p>
+                    
+                    <div className="pt-4 mt-6 border-t border-current/10 flex flex-col sm:flex-row items-center gap-4">
+                      <p className="text-sm font-medium">Gostou da análise? Faça muito mais com o documento completo.</p>
+                      <Button asChild size="sm" variant="secondary" className="rounded-xl font-bold bg-background hover:bg-background/80">
+                        <Link href="/register">
+                          Analisar contrato inteiro
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

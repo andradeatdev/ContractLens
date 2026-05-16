@@ -25,7 +25,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Contract Lens | Análise Inteligente de Contratos com IA",
   description: "Identifique riscos, resuma cláusulas e tire dúvidas sobre seus contratos jurídicos em segundos usando inteligência artificial de ponta.",
-  keywords: ["Análise de contrato IA", "Legal Tech Brasil", "Revisão de contrato automática", "Extração de dados PDF jurídico"],
+  keywords: [
+    "Análise de contrato IA", 
+    "Legal Tech Brasil", 
+    "Revisão de contrato automática", 
+    "Extração de dados PDF jurídico",
+    "Como saber se um contrato é perigoso",
+    "IA para ler PDF jurídico",
+    "Resumo de cláusulas contratuais IA"
+  ],
   authors: [{ name: "Gabriel Andrade" }],
   openGraph: {
     title: "Contract Lens | Análise Inteligente de Contratos com IA",
@@ -59,6 +67,7 @@ export default function RootLayout({
           showSpinner={false}
           height={3}
         />
+        {/* nosec: JSON-LD is static and safe */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
