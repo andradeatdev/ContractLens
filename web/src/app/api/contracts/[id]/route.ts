@@ -16,11 +16,14 @@ export async function GET(
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const response = await fetch(`${backendUrl}/contracts/${id}`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) return NextResponse.json({ error: "Failed to fetch contract" }, { status: response.status });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Failed to fetch contract" }));
+      return NextResponse.json(data, { status: response.status });
+    }
 
     const data = await response.json();
     return NextResponse.json(data);
@@ -40,7 +43,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const response = await fetch(`${backendUrl}/contracts/${id}`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -49,7 +52,10 @@ export async function PATCH(
       body: JSON.stringify(body),
     });
 
-    if (!response.ok) return NextResponse.json({ error: "Failed to update contract" }, { status: response.status });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Failed to update contract" }));
+      return NextResponse.json(data, { status: response.status });
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
@@ -66,12 +72,15 @@ export async function DELETE(
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const response = await fetch(`${backendUrl}/contracts/${id}`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) return NextResponse.json({ error: "Failed to delete contract" }, { status: response.status });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Failed to delete contract" }));
+      return NextResponse.json(data, { status: response.status });
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {

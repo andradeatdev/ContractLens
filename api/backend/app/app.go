@@ -130,87 +130,127 @@ func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *ha
 		_, _ = fmt.Fprintf(w, "OK")
 	})
 
+	// Documentation
+	mux.HandleFunc("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "../docs/api/openapi.json")
+	})
+
+	mux.HandleFunc("/api/docs", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprint(w, `
+<!doctype html>
+<html>
+  <head>
+    <title>API Reference</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script
+      id="api-reference"
+      data-url="/openapi.json"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>
+		`)
+	})
+
+	// API v1 prefix
+	v1 := "/api/v1"
+
 	// Auth
-	mux.HandleFunc("/auth/register", corsMiddleware(auth.Register))
-	mux.HandleFunc("/auth/login", corsMiddleware(auth.Login))
-	mux.HandleFunc("/auth/verify", corsMiddleware(auth.VerifyEmail))
-	mux.HandleFunc("/auth/resend-code", corsMiddleware(auth.ResendVerificationCode))
+	mux.HandleFunc(v1+"/auth/register", corsMiddleware(auth.Register))
+	mux.HandleFunc(v1+"/auth/login", corsMiddleware(auth.Login))
+	mux.HandleFunc(v1+"/auth/verify", corsMiddleware(auth.VerifyEmail))
+	mux.HandleFunc(v1+"/auth/resend-code", corsMiddleware(auth.ResendVerificationCode))
 
 	// Push Notifications
-	mux.HandleFunc("/push/subscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Subscribe)))
-	mux.HandleFunc("/push/unsubscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Unsubscribe)))
+	mux.HandleFunc(v1+"/push/subscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Subscribe)))
+	mux.HandleFunc(v1+"/push/unsubscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Unsubscribe)))
 
 	// Public Tools
-	mux.HandleFunc("/analyze-clause", corsMiddleware(handlers.RateLimitMiddleware(contract.AnalyzeClause)))
+	mux.HandleFunc(v1+"/analysis/clauses", corsMiddleware(handlers.RateLimitMiddleware(contract.AnalyzeClause)))
 
 	// Protegidas
-	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Upload)))
-	mux.HandleFunc("/contracts/compare", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Compare)))
-	mux.HandleFunc("/search", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Search)))
-	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Chat)))
-	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Activity)))
-	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Stats)))
-
-	mux.HandleFunc("/user", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
-		handleUserRoute(w, r, contract)
+	// POST /contracts -> Upload
+	// GET /contracts -> List
+	mux.HandleFunc(v1+"/contracts", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			contract.Upload(w, r)
+		} else if r.Method == http.MethodGet {
+			contract.List(w, r)
+		} else {
+			handlers.SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		}
 	})))
 
-	mux.HandleFunc("/contracts/", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
-		handleContractsRoute(w, r, contract)
+	mux.HandleFunc(v1+"/contracts/compare", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Compare)))
+	mux.HandleFunc(v1+"/contracts/search", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Search)))
+	mux.HandleFunc(v1+"/chat", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Chat)))
+
+	// User stats/activity
+	mux.HandleFunc(v1+"/users/me/activity", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Activity)))
+	mux.HandleFunc(v1+"/users/me/stats", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Stats)))
+
+	mux.HandleFunc(v1+"/users/me", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			contract.GetUser(w, r)
+		} else if r.Method == http.MethodPut || r.Method == http.MethodPost {
+			contract.UpdateUser(w, r)
+		} else {
+			handlers.SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		}
+	})))
+
+	mux.HandleFunc(v1+"/contracts/", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
+		handleContractsRoute(w, r, contract, v1)
 	})))
 }
 
-func handleUserRoute(w http.ResponseWriter, r *http.Request, h *handlers.ContractHandler) {
-	if r.Method == http.MethodGet {
-		h.GetUser(w, r)
-	} else if r.Method == http.MethodPut || r.Method == http.MethodPost {
-		h.UpdateUser(w, r)
-	} else {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-func handleContractsRoute(w http.ResponseWriter, r *http.Request, h *handlers.ContractHandler) {
+func handleContractsRoute(w http.ResponseWriter, r *http.Request, h *handlers.ContractHandler, prefix string) {
 	path := r.URL.Path
-	if path == "/contracts" || path == "/contracts/" {
-		h.List(w, r)
-		return
-	}
 
-	if strings.HasPrefix(path, "/contracts/s/") {
-		slug := strings.TrimPrefix(path, "/contracts/s/")
+	if strings.HasPrefix(path, prefix+"/contracts/s/") {
+		slug := strings.TrimPrefix(path, prefix+"/contracts/s/")
 		h.GetBySlug(w, r, slug)
 		return
 	}
 
-	if path == "/contracts/notes" && r.Method == http.MethodPost {
+	if path == prefix+"/contracts/notes" && r.Method == http.MethodPost {
 		h.CreateNote(w, r)
 		return
 	}
 
 	var id uint
-	if _, err := fmt.Sscanf(path, "/contracts/notes/%d", &id); err == nil {
+	if _, err := fmt.Sscanf(path, prefix+"/contracts/notes/%d", &id); err == nil {
 		h.DeleteNote(w, r, id)
 		return
 	}
 
-	if _, err := fmt.Sscanf(path, "/contracts/%d/download", &id); err == nil {
+	if _, err := fmt.Sscanf(path, prefix+"/contracts/%d/download", &id); err == nil {
 		h.Download(w, r, id)
 		return
 	}
 
-	if _, err := fmt.Sscanf(path, "/contracts/%d/reanalyze", &id); err == nil {
+	if _, err := fmt.Sscanf(path, prefix+"/contracts/%d/reanalyze", &id); err == nil {
 		h.Reanalyze(w, r, id)
 		return
 	}
 
-	if _, err := fmt.Sscanf(path, "/contracts/%d/export", &id); err == nil {
+	if _, err := fmt.Sscanf(path, prefix+"/contracts/%d/export", &id); err == nil {
 		h.ExportAnalysis(w, r, id)
 		return
 	}
 
-	if _, err := fmt.Sscanf(path, "/contracts/%d", &id); err != nil {
-		http.Error(w, "Invalid Contract Path", http.StatusBadRequest)
+	if _, err := fmt.Sscanf(path, prefix+"/contracts/%d", &id); err != nil {
+		handlers.SendJSONError(w, "Caminho de contrato inválido", http.StatusBadRequest, "INVALID_PATH")
 		return
 	}
 
@@ -222,7 +262,7 @@ func handleContractsRoute(w http.ResponseWriter, r *http.Request, h *handlers.Co
 	case http.MethodDelete:
 		h.Delete(w, r, id)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		handlers.SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 	}
 }
 

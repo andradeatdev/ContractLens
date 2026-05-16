@@ -18,13 +18,13 @@ func NewNotificationHandler(repo repositories.Repository) *NotificationHandler {
 
 func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 		return
 	}
 
 	userID, ok := r.Context().Value(UserIDKey).(uint)
 	if !ok {
-		SendJSONError(w, "Erro de autenticação interno", http.StatusUnauthorized)
+		SendJSONError(w, "Erro de autenticação interno", http.StatusUnauthorized, "AUTH_REQUIRED")
 		return
 	}
 
@@ -37,7 +37,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Inscrição inválida", http.StatusBadRequest)
+		SendJSONError(w, "Inscrição inválida", http.StatusBadRequest, "INVALID_REQUEST")
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := h.repo.CreatePushSubscription(sub); err != nil {
-		SendJSONError(w, "Erro ao salvar inscrição", http.StatusInternalServerError)
+		SendJSONError(w, "Erro ao salvar inscrição", http.StatusInternalServerError, "INTERNAL_ERROR")
 		return
 	}
 
@@ -58,7 +58,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 
 func (h *NotificationHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 		return
 	}
 
@@ -67,12 +67,12 @@ func (h *NotificationHandler) Unsubscribe(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Dados inválidos", http.StatusBadRequest)
+		SendJSONError(w, "Dados inválidos", http.StatusBadRequest, "INVALID_REQUEST")
 		return
 	}
 
 	if err := h.repo.DeletePushSubscription(req.Endpoint); err != nil {
-		SendJSONError(w, "Erro ao remover inscrição", http.StatusInternalServerError)
+		SendJSONError(w, "Erro ao remover inscrição", http.StatusInternalServerError, "INTERNAL_ERROR")
 		return
 	}
 

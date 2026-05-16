@@ -6,21 +6,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const response = await fetch(`${backendUrl}/auth/verify`, {
+    const response = await fetch(`${backendUrl}/api/v1/auth/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      return NextResponse.json(
-        { error: data.error || "Falha na verificação" },
-        { status: response.status }
-      );
+      const data = await response.json().catch(() => ({ error: "Falha na verificação" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
+    const data = await response.json();
     const res = NextResponse.json({ success: true, message: data.message });
 
     // Definir cookie HTTP-Only para login automático

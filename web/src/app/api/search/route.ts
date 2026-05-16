@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
-    const response = await fetch(`${backendUrl}/search`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/search`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,13 +27,8 @@ export async function POST(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorJson = JSON.parse(errorText);
-        return NextResponse.json({ error: errorJson.error || errorJson.message || "Erro desconhecido no servidor" }, { status: response.status });
-      } catch {
-        return NextResponse.json({ error: `Erro no servidor: ${errorText}` }, { status: response.status });
-      }
+      const data = await response.json().catch(() => ({ error: "Erro desconhecido no servidor" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const data = await response.json();

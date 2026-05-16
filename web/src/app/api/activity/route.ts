@@ -11,7 +11,7 @@ export async function GET() {
 
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
-    const response = await fetch(`${backendUrl}/activity`, {
+    const response = await fetch(`${backendUrl}/api/v1/users/me/activity`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -20,13 +20,8 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorJson = JSON.parse(errorText);
-        return NextResponse.json({ error: errorJson.error || errorJson.message || "Erro desconhecido no servidor" }, { status: response.status });
-      } catch {
-        return NextResponse.json({ error: `Erro no servidor: ${errorText}` }, { status: response.status });
-      }
+      const data = await response.json().catch(() => ({ error: "Erro desconhecido no servidor" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const data = await response.json();

@@ -5,6 +5,7 @@ import { useModal } from "@/components/modal-provider";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FullContract } from "@/types";
+import { APIError } from "@/lib/api-error";
 
 export function useContractDetails(slug: string) {
   const modal = useModal();
@@ -15,7 +16,10 @@ export function useContractDetails(slug: string) {
     queryKey: ['contract', slug],
     queryFn: async () => {
       const response = await fetch(`/api/contracts/s/${slug}`);
-      if (!response.ok) throw new Error("Contrato não encontrado");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
       return response.json();
     }
   });
@@ -26,8 +30,8 @@ export function useContractDetails(slug: string) {
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/contracts/${id}/reanalyze`, { method: "POST" });
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erro ao reanalisar");
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
       }
       return response.json();
     },
@@ -47,7 +51,10 @@ export function useContractDetails(slug: string) {
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/contracts/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Erro ao excluir");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -70,7 +77,10 @@ export function useContractDetails(slug: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: newName }),
       });
-      if (!response.ok) throw new Error("Erro ao renomear");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contract', slug] });
@@ -115,7 +125,10 @@ export function useContractDetails(slug: string) {
     if (!contract) return;
     try {
       const response = await fetch(`/api/contracts/${contract.id}/download`);
-      if (!response.ok) throw new Error("Erro ao baixar arquivo");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -128,7 +141,7 @@ export function useContractDetails(slug: string) {
       document.body.removeChild(a);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao baixar arquivo");
+      toast.error((err as Error).message || "Erro ao baixar arquivo");
     }
   };
 
@@ -136,7 +149,10 @@ export function useContractDetails(slug: string) {
     if (!contract) return;
     try {
       const response = await fetch(`/api/contracts/${contract.id}/export`);
-      if (!response.ok) throw new Error("Erro ao exportar análise");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -153,7 +169,7 @@ export function useContractDetails(slug: string) {
       });
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao exportar");
+      toast.error((err as Error).message || "Erro ao exportar");
     }
   };
 

@@ -32,6 +32,9 @@ Análise inteligente de contratos jurídicos utilizando Inteligência Artificial
 - **Chat Contextual:** Interface de chat para tirar dúvidas específicas sobre o conteúdo do contrato.
 - **Exportação:** Geração de relatórios e resumos estruturados.
 - **Segurança:** Autenticação robusta com verificação via e-mail e códigos temporários.
+- **API RESTful v1:** Endpoints padronizados em `/api/v1`, com tratamento de erros JSON estruturado e altamente descritivo.
+- **Documentação de API Interativa:** Especificação OpenAPI disponível nativamente, com uma interface interativa provida pelo Scalar UI (`/api/docs`).
+
 
 ## 🛠️ Arquitetura
 

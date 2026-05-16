@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const apiFormData = new FormData();
     apiFormData.append("file", file);
 
-    const response = await fetch(`${backendUrl}/upload`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -30,13 +30,8 @@ export async function POST(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorJson = JSON.parse(errorText);
-        return NextResponse.json({ error: errorJson.error || errorJson.message || "Erro desconhecido no servidor" }, { status: response.status });
-      } catch {
-        return NextResponse.json({ error: `Erro no servidor: ${errorText}` }, { status: response.status });
-      }
+      const data = await response.json().catch(() => ({ error: "Erro desconhecido no servidor" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const data = await response.json();

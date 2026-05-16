@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { toast } from "sonner";
+import { APIError } from "@/lib/api-error";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export function useLogin() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao fazer login");
+        throw new APIError(data, response.status);
       }
 
       toast.success("Login realizado com sucesso", {
@@ -48,6 +49,13 @@ export function useLogin() {
       });
       navigateWithTransition('/dashboard', 'nav-forward');
     } catch (err: unknown) {
+      if (err instanceof APIError && err.details) {
+        err.details.forEach((detail) => {
+          if (detail.field) {
+            form.setError(detail.field as any, { type: "server", message: detail.message });
+          }
+        });
+      }
       toast.error("Erro ao realizar login", {
         description: (err as Error).message
       });

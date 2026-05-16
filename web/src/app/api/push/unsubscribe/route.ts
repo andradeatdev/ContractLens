@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${backendUrl}/push/unsubscribe`, {
+    const response = await fetch(`${backendUrl}/api/v1/push/unsubscribe`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,8 +20,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+      try {
+        const errorJson = await response.json();
+        return NextResponse.json(errorJson, { status: response.status });
+      } catch {
+        return NextResponse.json({ error: "Erro ao se desinscrever das notificações" }, { status: response.status });
+      }
     }
 
     return NextResponse.json({ message: "Removido com sucesso" });

@@ -14,9 +14,9 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log(`[Proxy Reanalyze] Chamando backend: ${backendUrl}/contracts/${id}/reanalyze`);
+    console.log(`[Proxy Reanalyze] Chamando backend: ${backendUrl}/api/v1/contracts/${id}/reanalyze`);
 
-    const response = await fetch(`${backendUrl}/contracts/${id}/reanalyze`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/${id}/reanalyze`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -25,11 +25,8 @@ export async function POST(
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      return NextResponse.json(
-        { error: data.error || "Falha ao reanalisar contrato" },
-        { status: response.status }
-      );
+      const data = await response.json().catch(() => ({ error: "Falha ao reanalisar contrato" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const data = await response.json();

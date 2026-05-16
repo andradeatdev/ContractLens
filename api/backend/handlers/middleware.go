@@ -36,7 +36,7 @@ func RateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if len(valid) >= 5 {
-			SendJSONError(w, "Muitas requisições. Tente novamente mais tarde.", http.StatusTooManyRequests)
+			SendJSONError(w, "Muitas requisições. Tente novamente mais tarde.", http.StatusTooManyRequests, "RATE_LIMIT_EXCEEDED")
 			return
 		}
 
@@ -55,13 +55,13 @@ func AuthMiddleware(repo repositories.Repository, next http.HandlerFunc) http.Ha
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			SendJSONError(w, "Token de autorização ausente", http.StatusUnauthorized)
+			SendJSONError(w, "Token de autorização ausente", http.StatusUnauthorized, "AUTH_REQUIRED")
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			SendJSONError(w, "Formato de token inválido", http.StatusUnauthorized)
+			SendJSONError(w, "Formato de token inválido", http.StatusUnauthorized, "INVALID_TOKEN")
 			return
 		}
 
@@ -79,19 +79,19 @@ func AuthMiddleware(repo repositories.Repository, next http.HandlerFunc) http.Ha
 		})
 
 		if err != nil || !token.Valid {
-			SendJSONError(w, "Token inválido ou expirado", http.StatusUnauthorized)
+			SendJSONError(w, "Token inválido ou expirado", http.StatusUnauthorized, "INVALID_TOKEN")
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			SendJSONError(w, "Falha ao processar as informações do token", http.StatusUnauthorized)
+			SendJSONError(w, "Falha ao processar as informações do token", http.StatusUnauthorized, "INVALID_TOKEN")
 			return
 		}
 
 		userIDFloat, ok := claims["user_id"].(float64)
 		if !ok {
-			SendJSONError(w, "ID de usuário ausente no token", http.StatusUnauthorized)
+			SendJSONError(w, "ID de usuário ausente no token", http.StatusUnauthorized, "INVALID_TOKEN")
 			return
 		}
 
@@ -100,7 +100,7 @@ func AuthMiddleware(repo repositories.Repository, next http.HandlerFunc) http.Ha
 		// Verificar se o usuário ainda existe no banco de dados
 		_, err = repo.GetUser(userID)
 		if err != nil {
-			SendJSONError(w, "Usuário não encontrado ou sessão inválida", http.StatusUnauthorized)
+			SendJSONError(w, "Usuário não encontrado ou sessão inválida", http.StatusUnauthorized, "SESSION_EXPIRED")
 			return
 		}
 

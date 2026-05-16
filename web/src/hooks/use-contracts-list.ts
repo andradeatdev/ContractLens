@@ -6,6 +6,7 @@ import { useUIStore } from "@/lib/store";
 import { useModal } from "@/components/modal-provider";
 import { toast } from "sonner";
 import { Contract } from "@/types";
+import { APIError } from "@/lib/api-error";
 
 export function useContractsList() {
   const { contractFilters, setContractFilters, resetContractFilters } = useUIStore();
@@ -18,7 +19,10 @@ export function useContractsList() {
     queryKey: ['contracts'],
     queryFn: async () => {
       const response = await fetch("/api/contracts");
-      if (!response.ok) throw new Error("Falha ao carregar contratos");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
       return response.json();
     }
   });
@@ -57,7 +61,10 @@ export function useContractsList() {
       const response = await fetch(`/api/contracts/${id}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Falha ao excluir contrato");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -76,7 +83,10 @@ export function useContractsList() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: newName }),
       });
-      if (!response.ok) throw new Error("Erro ao renomear");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -95,8 +105,8 @@ export function useContractsList() {
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/contracts/${id}/reanalyze`, { method: "POST" });
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erro ao reanalisar");
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
       }
       return response.json();
     },
@@ -139,7 +149,10 @@ export function useContractsList() {
   const handleDownload = async (id: number, filename: string) => {
     try {
       const response = await fetch(`/api/contracts/${id}/download`);
-      if (!response.ok) throw new Error("Erro ao baixar arquivo");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -152,14 +165,17 @@ export function useContractsList() {
       document.body.removeChild(a);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao baixar arquivo");
+      toast.error((err as Error).message || "Erro ao baixar arquivo");
     }
   };
 
   const handleExportAnalysis = async (id: number, slug: string) => {
     try {
       const response = await fetch(`/api/contracts/${id}/export`);
-      if (!response.ok) throw new Error("Erro ao exportar análise");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new APIError(data, response.status);
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -176,7 +192,7 @@ export function useContractsList() {
       });
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao exportar");
+      toast.error((err as Error).message || "Erro ao exportar");
     }
   };
 

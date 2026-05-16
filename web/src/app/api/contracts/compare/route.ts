@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     apiFormData.append("base_id", baseId);
     apiFormData.append("file", file);
 
-    const response = await fetch(`${backendUrl}/contracts/compare`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/compare`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -32,11 +32,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       try {
-        const errorJson = JSON.parse(errorText);
-        return NextResponse.json({ error: errorJson.error || errorJson.message || "Erro desconhecido no servidor" }, { status: response.status });
+        const errorJson = await response.json();
+        return NextResponse.json(errorJson, { status: response.status });
       } catch {
+        const errorText = await response.text();
         return NextResponse.json({ error: `Erro no servidor: ${errorText}` }, { status: response.status });
       }
     }

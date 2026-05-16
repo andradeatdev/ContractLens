@@ -9,9 +9,9 @@ export async function GET(
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
     const authHeader = request.headers.get("Authorization");
 
-    console.log(`[Proxy Export] Chamando backend: ${backendUrl}/contracts/${id}/export`);
+    console.log(`[Proxy Export] Chamando backend: ${backendUrl}/api/v1/contracts/${id}/export`);
 
-    const response = await fetch(`${backendUrl}/contracts/${id}/export`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/${id}/export`, {
       method: "GET",
       headers: { 
         ...(authHeader ? { "Authorization": authHeader } : {})
@@ -19,10 +19,8 @@ export async function GET(
     });
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: "Falha ao exportar análise" },
-        { status: response.status }
-      );
+      const data = await response.json().catch(() => ({ error: "Falha ao exportar análise" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const content = await response.text();

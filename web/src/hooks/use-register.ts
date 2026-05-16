@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { toast } from "sonner";
+import { APIError } from "@/lib/api-error";
 
 export function useRegister() {
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@ export function useRegister() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar conta");
+        throw new APIError(data, response.status);
       }
 
       toast.success("Conta criada com sucesso", {
@@ -69,6 +70,13 @@ export function useRegister() {
       setRegisteredEmail(values.email);
       setResendCooldown(60);
     } catch (err: unknown) {
+      if (err instanceof APIError && err.details) {
+        err.details.forEach((detail: any) => {
+          if (detail.field) {
+            form.setError(detail.field as any, { type: "server", message: detail.message });
+          }
+        });
+      }
       toast.error("Erro ao criar conta", {
         description: (err as Error).message
       });
@@ -91,11 +99,13 @@ export function useRegister() {
       const data = await response.json();
 
       if (!response.ok) {
-        const match = data.error.match(/Aguarde (\d+) segundos/);
-        if (match) {
-          setResendCooldown(parseInt(match[1]));
+        if (data && data.error && typeof data.error === 'string') {
+          const match = data.error.match(/Aguarde (\d+) segundos/);
+          if (match) {
+            setResendCooldown(parseInt(match[1]));
+          }
         }
-        throw new Error(data.error || "Erro ao reenviar código");
+        throw new APIError(data, response.status);
       }
 
       toast.success("Código reenviado", {
@@ -126,7 +136,7 @@ export function useRegister() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Código inválido");
+        throw new APIError(data, response.status);
       }
 
       toast.success("E-mail verificado com sucesso", {

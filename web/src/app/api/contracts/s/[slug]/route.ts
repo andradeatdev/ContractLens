@@ -16,11 +16,18 @@ export async function GET(
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { slug } = await params;
-    const response = await fetch(`${backendUrl}/contracts/s/${slug}`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/s/${slug}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) return NextResponse.json({ error: "Failed to fetch contract by slug" }, { status: response.status });
+    if (!response.ok) {
+      try {
+        const errorJson = await response.json();
+        return NextResponse.json(errorJson, { status: response.status });
+      } catch {
+        return NextResponse.json({ error: "Failed to fetch contract by slug" }, { status: response.status });
+      }
+    }
 
     const data = await response.json();
     return NextResponse.json(data);

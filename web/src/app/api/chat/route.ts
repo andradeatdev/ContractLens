@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
-    const response = await fetch(`${backendUrl}/chat`, {
+    const response = await fetch(`${backendUrl}/api/v1/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       try {
-        const errorJson = JSON.parse(errorText);
-        return NextResponse.json({ error: errorJson.error || errorJson.message || "Erro desconhecido no servidor" }, { status: response.status });
+        const errorJson = await response.json();
+        return NextResponse.json(errorJson, { status: response.status });
       } catch {
+        const errorText = await response.text();
         return NextResponse.json({ error: `Erro no servidor: ${errorText}` }, { status: response.status });
       }
     }

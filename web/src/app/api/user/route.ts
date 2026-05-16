@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
-    const response = await fetch(`${backendUrl}/user`, {
+    const response = await fetch(`${backendUrl}/api/v1/users/me`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -19,10 +19,8 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: "Falha ao buscar perfil no servidor" },
-        { status: response.status }
-      );
+      const data = await response.json().catch(() => ({ error: "Falha ao buscar perfil no servidor" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const data = await response.json();
@@ -47,7 +45,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
-    const response = await fetch(`${backendUrl}/user`, {
+    const response = await fetch(`${backendUrl}/api/v1/users/me`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -57,10 +55,8 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: "Falha ao atualizar perfil no servidor" },
-        { status: response.status }
-      );
+      const data = await response.json().catch(() => ({ error: "Falha ao atualizar perfil no servidor" }));
+      return NextResponse.json(data, { status: response.status });
     }
 
     const data = await response.json();

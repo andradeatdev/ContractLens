@@ -17,7 +17,7 @@ func NewAuthHandler(service *services.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 		return
 	}
 
@@ -28,18 +28,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest, "INVALID_REQUEST")
 		return
 	}
 
 	if req.Name == "" || req.Email == "" || req.Password == "" {
-		SendJSONError(w, "Nome, e-mail e senha são obrigatórios", http.StatusBadRequest)
+		SendJSONError(w, "Nome, e-mail e senha são obrigatórios", http.StatusBadRequest, "MISSING_FIELDS")
 		return
 	}
 
 	user, err := h.service.Register(req.Name, req.Email, req.Password)
 	if err != nil {
-		SendJSONError(w, err.Error(), http.StatusBadRequest)
+		SendJSONError(w, err.Error(), http.StatusBadRequest, "REGISTRATION_FAILED")
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 		return
 	}
 
@@ -58,13 +58,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest, "INVALID_REQUEST")
 		return
 	}
 
 	token, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
-		SendJSONError(w, err.Error(), http.StatusUnauthorized)
+		SendJSONError(w, err.Error(), http.StatusUnauthorized, "AUTH_FAILED")
 		return
 	}
 
@@ -73,7 +73,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 		return
 	}
 
@@ -83,18 +83,18 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest, "INVALID_REQUEST")
 		return
 	}
 
 	if req.Email == "" || req.Code == "" {
-		SendJSONError(w, "E-mail e código são obrigatórios", http.StatusBadRequest)
+		SendJSONError(w, "E-mail e código são obrigatórios", http.StatusBadRequest, "MISSING_FIELDS")
 		return
 	}
 
 	token, err := h.service.VerifyEmail(req.Email, req.Code)
 	if err != nil {
-		SendJSONError(w, err.Error(), http.StatusBadRequest)
+		SendJSONError(w, err.Error(), http.StatusBadRequest, "VERIFICATION_FAILED")
 		return
 	}
 
@@ -103,7 +103,7 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed)
+		SendJSONError(w, "Método não permitido", http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
 		return
 	}
 
@@ -112,18 +112,18 @@ func (h *AuthHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest)
+		SendJSONError(w, "Corpo da requisição inválido", http.StatusBadRequest, "INVALID_REQUEST")
 		return
 	}
 
 	if req.Email == "" {
-		SendJSONError(w, "E-mail é obrigatório", http.StatusBadRequest)
+		SendJSONError(w, "E-mail é obrigatório", http.StatusBadRequest, "MISSING_FIELDS")
 		return
 	}
 
 	err := h.service.ResendVerificationCode(req.Email)
 	if err != nil {
-		SendJSONError(w, err.Error(), http.StatusBadRequest)
+		SendJSONError(w, err.Error(), http.StatusBadRequest, "INTERNAL_ERROR")
 		return
 	}
 

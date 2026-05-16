@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const response = await fetch(`${backendUrl}/contracts/notes/${id}`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/notes/${id}`, {
       method: "DELETE",
       headers: { 
         "Authorization": `Bearer ${token}`
@@ -22,10 +22,15 @@ export async function DELETE(
     });
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: "Falha ao excluir nota" },
-        { status: response.status }
-      );
+      try {
+        const errorJson = await response.json();
+        return NextResponse.json(errorJson, { status: response.status });
+      } catch {
+        return NextResponse.json(
+          { error: "Falha ao excluir nota" },
+          { status: response.status }
+        );
+      }
     }
 
     return new NextResponse(null, { status: 204 });

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${backendUrl}/contracts/notes`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/notes`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -22,11 +22,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      return NextResponse.json(
-        { error: data.error || "Falha ao criar nota" },
-        { status: response.status }
-      );
+      try {
+        const errorJson = await response.json();
+        return NextResponse.json(errorJson, { status: response.status });
+      } catch {
+        return NextResponse.json(
+          { error: "Falha ao criar nota" },
+          { status: response.status }
+        );
+      }
     }
 
     const data = await response.json();

@@ -12,11 +12,14 @@ export async function GET(
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const response = await fetch(`${backendUrl}/contracts/${id}/download`, {
+    const response = await fetch(`${backendUrl}/api/v1/contracts/${id}/download`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) return NextResponse.json({ error: "Failed to download" }, { status: response.status });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Failed to download" }));
+      return NextResponse.json(data, { status: response.status });
+    }
 
     const blob = await response.blob();
     const inline = request.nextUrl.searchParams.get("inline") === "true";
