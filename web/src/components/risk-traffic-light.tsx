@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, CheckCircle2, Info, Loader2, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, Loader2, Send, Copy, MessageSquarePlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { contractAnalysisSchema } from "@/lib/validations/contract-analysis";
+import { toast } from "sonner";
 
 const PLACEHOLDERS = [
   "Ex: 'Fica eleito o foro da comarca de Dubai para dirimir quaisquer dúvidas...'",
@@ -31,6 +32,7 @@ export function RiskTrafficLight() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -66,6 +68,13 @@ export function RiskTrafficLight() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success("Sugestão copiada!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const getSeverityColors = (severity: string) => {
@@ -166,96 +175,61 @@ export function RiskTrafficLight() {
                       {result.title}
                     </h4>
                   </div>
-                  import { useState, useEffect } from "react";
-                  import Link from "next/link";
-                  import { motion, AnimatePresence } from "framer-motion";
-                  import { AlertCircle, CheckCircle2, Info, Loader2, Send, Copy, MessageSquarePlus, Check } from "lucide-react";
-                  import { Button } from "@/components/ui/button";
-                  import { Card, CardContent } from "@/components/ui/card";
-                  import { Textarea } from "@/components/ui/textarea";
-                  import { Badge } from "@/components/ui/badge";
-                  import { cn } from "@/lib/utils";
-                  import { contractAnalysisSchema } from "@/lib/validations/contract-analysis";
-                  import { toast } from "sonner";
-
-                  // ... (existing PLACEHOLDERS and interfaces)
-
-                  export function RiskTrafficLight() {
-                    const [clause, setClause] = useState("");
-                    const [loading, setLoading] = useState(false);
-                    const [result, setResult] = useState<AnalysisResult | null>(null);
-                    const [error, setError] = useState<string | null>(null);
-                    const [placeholderIdx, setPlaceholderIdx] = useState(0);
-                    const [copied, setCopied] = useState(false);
-
-                    // ... (useEffect and handleAnalyze remain same)
-
-                    const copyToClipboard = (text: string) => {
-                      navigator.clipboard.writeText(text);
-                      setCopied(true);
-                      toast.success("Sugestão copiada!");
-                      setTimeout(() => setCopied(false), 2000);
-                    };
-
-                    // ... (getSeverityColors, getSeverityIcon)
-
-                    return (
-                      // ... (existing JSX up to the result card)
-                                      <div className="space-y-4 text-foreground/80 leading-relaxed">
-                                        <p><strong>Por que?</strong> {result.explanation}</p>
-                                        <p className="p-4 rounded-xl bg-background/50 border border-current/10">
-                                          <strong>💡 Sugestão:</strong> {result.suggestion}
-                                        </p>
-
-                                        <div className="pt-4 mt-6 border-t border-current/10 flex flex-col sm:flex-row items-center gap-3">
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="rounded-xl font-bold gap-2"
-                                            onClick={() => copyToClipboard(result.suggestion)}
-                                          >
-                                            {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                                            Copiar sugestão
-                                          </Button>
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline" 
-                                            className="rounded-xl font-bold gap-2"
-                                            onClick={() => toast.info("Funcionalidade em breve: Gerar resposta pronta")}
-                                          >
-                                            <MessageSquarePlus className="h-4 w-4" />
-                                            Gerar resposta
-                                          </Button>
-                                          <div className="flex items-center ml-auto gap-2">
-                                             <Button 
-                                               variant="ghost" 
-                                               size="icon" 
-                                               className="h-8 w-8 rounded-lg"
-                                               onClick={() => toast.success("Obrigado pelo feedback!")}
-                                             >
-                                                <span className="text-sm">👍</span>
-                                             </Button>
-                                             <Button 
-                                               variant="ghost" 
-                                               size="icon" 
-                                               className="h-8 w-8 rounded-lg"
-                                               onClick={() => toast.info("Obrigado. Estamos melhorando!")}
-                                             >
-                                                <span className="text-sm">👎</span>
-                                             </Button>
-                                          </div>
-                                        </div>                                      </div>
-                                    </div>
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-
-                            <p className="text-center text-xs text-muted-foreground/60 italic">
-                              * Esta análise é gerada por IA para fins informativos e não substitui o aconselhamento jurídico profissional.
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  }
+                  <div className="space-y-4 text-foreground/80 leading-relaxed">
+                    <p><strong>Por que?</strong> {result.explanation}</p>
+                    <p className="p-4 rounded-xl bg-background/50 border border-current/10">
+                      <strong>💡 Sugestão:</strong> {result.suggestion}
+                    </p>
+                    
+                    <div className="pt-4 mt-6 border-t border-current/10 flex flex-col sm:flex-row items-center gap-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl font-bold gap-2"
+                        onClick={() => copyToClipboard(result.suggestion)}
+                      >
+                        {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                        Copiar sugestão
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="rounded-xl font-bold gap-2"
+                        onClick={() => toast.info("Funcionalidade em breve: Gerar resposta pronta")}
+                      >
+                        <MessageSquarePlus className="h-4 w-4" />
+                        Gerar resposta
+                      </Button>
+                      <div className="flex items-center ml-auto gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-lg"
+                            onClick={() => toast.success("Obrigado pelo feedback!")}
+                          >
+                            <span className="text-sm">👍</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-lg"
+                            onClick={() => toast.info("Obrigado. Estamos melhorando!")}
+                          >
+                            <span className="text-sm">👎</span>
+                          </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <p className="text-center text-xs text-muted-foreground/60 italic">
+            * Esta análise é gerada por IA para fins informativos e não substitui o aconselhamento jurídico profissional.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
