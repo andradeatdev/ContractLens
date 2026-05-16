@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/utils"
+	"github.com/andradeatdev/ContractLens/api/pkg/utils"
 	"github.com/ledongthuc/pdf"
 )
 

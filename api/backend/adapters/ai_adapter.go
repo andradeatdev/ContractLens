@@ -3,9 +3,9 @@ package adapters
 import (
 	"context"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/services"
-	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/ai"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/services"
+	"github.com/andradeatdev/ContractLens/api/pkg/ai"
 )
 
 type GeminiAdapter struct{}

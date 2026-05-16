@@ -1,6 +1,6 @@
 package repositories
 
-import "github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+import "github.com/andradeatdev/ContractLens/api/backend/models"
 
 // Repository define a interface para persistência de dados (Port)
 type Repository interface {

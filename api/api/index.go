@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/app"
+	"github.com/andradeatdev/ContractLens/api/backend/app"
 )
 
 var handler http.Handler

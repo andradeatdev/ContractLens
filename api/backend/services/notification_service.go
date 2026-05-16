@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/SherClockHolmes/webpush-go"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/repositories"
 )
 
 type NotificationService struct {

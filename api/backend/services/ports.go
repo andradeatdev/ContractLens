@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
 )
 
 // FileStorage é o Port para persistência de arquivos (Arquitetura Hexagonal)

@@ -13,7 +13,7 @@
 
 Intelligent legal contract analysis platform using Artificial Intelligence for risk identification, clause summarization, and an interactive chat.
 
-![Dashboard Preview](https://raw.githubusercontent.com/andradeatdev/ai_contract_analyzer/main/public/preview.png)
+![Dashboard Preview](https://raw.githubusercontent.com/andradeatdev/ContractLens/main/public/preview.png)
 
 ## 🚀 Technologies
 

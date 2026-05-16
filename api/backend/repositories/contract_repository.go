@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

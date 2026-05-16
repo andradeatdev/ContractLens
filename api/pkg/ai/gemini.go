@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )

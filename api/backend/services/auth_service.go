@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/repositories"
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"

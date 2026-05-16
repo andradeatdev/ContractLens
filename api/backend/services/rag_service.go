@@ -6,9 +6,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
-	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/utils"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/repositories"
+	"github.com/andradeatdev/ContractLens/api/pkg/utils"
 	"github.com/pgvector/pgvector-go"
 	"github.com/pkoukk/tiktoken-go"
 )

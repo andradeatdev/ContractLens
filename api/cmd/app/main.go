@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/app"
+	"github.com/andradeatdev/ContractLens/api/backend/app"
 )
 
 func main() {

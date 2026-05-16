@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/services"
+	"github.com/andradeatdev/ContractLens/api/backend/services"
 )
 
 type AuthHandler struct {

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/repositories"
 )
 
 type NotificationHandler struct {

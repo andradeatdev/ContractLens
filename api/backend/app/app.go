@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/adapters"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/handlers"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/services"
+	"github.com/andradeatdev/ContractLens/api/backend/adapters"
+	"github.com/andradeatdev/ContractLens/api/backend/handlers"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/repositories"
+	"github.com/andradeatdev/ContractLens/api/backend/services"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

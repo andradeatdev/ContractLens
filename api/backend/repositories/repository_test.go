@@ -3,7 +3,7 @@ package repositories
 import (
 	"testing"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

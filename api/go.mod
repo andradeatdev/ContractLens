@@ -1,4 +1,4 @@
-module github.com/andradeatdev/ai_contract_analyzer/api
+module github.com/andradeatdev/ContractLens/api
 
 go 1.26.2
 

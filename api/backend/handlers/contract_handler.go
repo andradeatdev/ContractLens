@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/services"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/services"
 )
 
 type ContractHandler struct {

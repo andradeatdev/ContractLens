@@ -1,7 +1,7 @@
 package adapters
 
 import (
-	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/pdf"
+	"github.com/andradeatdev/ContractLens/api/pkg/pdf"
 )
 
 type PDFAdapter struct{}

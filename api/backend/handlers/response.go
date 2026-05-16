@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
+	"github.com/andradeatdev/ContractLens/api/backend/models"
 )
 
 // SendJSONError envia uma resposta de erro formatada em JSON estruturado

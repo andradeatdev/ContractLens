@@ -13,7 +13,7 @@
 
 Análise inteligente de contratos jurídicos utilizando Inteligência Artificial para identificação de riscos, resumo de cláusulas e chat interativo.
 
-![Dashboard Preview](https://raw.githubusercontent.com/andradeatdev/ai_contract_analyzer/main/public/preview.png)
+![Dashboard Preview](https://raw.githubusercontent.com/andradeatdev/ContractLens/main/public/preview.png)
 
 ## 🚀 Tecnologias
 
