@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema, type ProfileInput } from "@/lib/validations/auth";
 import { cn } from "@/lib/utils";
 import { useModal } from "@/components/modal-provider";
-import { subscribeToPush } from "@/lib/push";
+import { subscribeToPush, unsubscribeFromPush } from "@/lib/push";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
@@ -26,11 +26,8 @@ export default function SettingsPage() {
 
   const handlePushToggle = async () => {
     if (pushEnabled) {
-      modal.alert({
-        title: "Desativar notificações",
-        message: "Para desativar completamente, você deve remover a permissão nas configurações do seu navegador.",
-        type: "info"
-      });
+      const success = await unsubscribeFromPush();
+      if (success) setPushEnabled(false);
       return;
     }
 
@@ -302,7 +299,10 @@ function SettingsToggle({
         onClick={onChange}
         className={`h-6 w-11 rounded-full transition-colors relative shadow-inner cursor-pointer ${enabled ? 'bg-primary' : 'bg-muted'} ${disabled ? 'opacity-50' : ''}`}
       >
-        <div className={`absolute top-1 left-1 h-4 w-4 bg-white rounded-full transition-transform shadow-sm ${enabled ? 'translate-x-5' : ''}`} />
+        <div className={cn(
+          "absolute top-1 left-1 h-4 w-4 rounded-full transition-transform shadow-sm",
+          enabled ? "translate-x-5 bg-primary-foreground" : "bg-white"
+        )} />
       </button>
     </div>
   );

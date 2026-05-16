@@ -46,6 +46,32 @@ export async function subscribeToPush() {
   }
 }
 
+export async function unsubscribeFromPush() {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      // Remover no backend
+      await fetch("/api/push/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+      });
+
+      // Remover no browser
+      await subscription.unsubscribe();
+    }
+
+    toast.success("Notificações desativadas.");
+    return true;
+  } catch (error) {
+    console.error("Push unsubscription failed:", error);
+    toast.error("Erro ao desativar notificações.");
+    return false;
+  }
+}
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
