@@ -49,6 +49,9 @@ jobs:
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -56,11 +59,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.26'
+          cache-dependency-path: api/go.sum
 
       - name: Run Gosec (Backend SAST)
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec -fmt=json -out=gosec_results.json ./api/... || true
+          gosec -fmt=sarif -out=gosec_results.sarif ./api/... || true
+
+      - name: Upload Gosec SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec_results.sarif
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -69,3 +79,17 @@ jobs:
 
       - name: Run Security Audit
         run: ./scripts/test-security.sh
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit-reports
+          path: |
+            gosec_results.sarif
+            security_scan_api.json
+            security_scan_web.json
+            vuln_scan_api.json
+            vuln_scan_web.json
+            compliance_scan.json
+          retention-days: 7

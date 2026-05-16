@@ -6,11 +6,11 @@ log_info "Iniciando Auditoria de Segurança..."
 # 1. Escaneamento de Código (SAST)
 log_info "Executando Security Scanner (SAST)..."
 log_info "Verificando API..."
-python3 .agents/skills/senior-secops/scripts/security_scanner.py ./api --severity high
+python3 scripts/security/lib/security_scanner.py ./api --severity high --json --output security_scan_api.json
 SAST_API_STATUS=$?
 
 log_info "Verificando Web..."
-python3 .agents/skills/senior-secops/scripts/security_scanner.py ./web --severity high
+python3 scripts/security/lib/security_scanner.py ./web --severity high --json --output security_scan_web.json
 SAST_WEB_STATUS=$?
 
 if [ $SAST_API_STATUS -eq 0 ] && [ $SAST_WEB_STATUS -eq 0 ]; then
@@ -22,16 +22,16 @@ fi
 # 2. Auditoria de Dependências (CVEs)
 log_info "Executando Vulnerability Assessor (Dependências)..."
 log_info "Verificando API (Go)..."
-python3 .agents/skills/senior-secops/scripts/vulnerability_assessor.py ./api --severity high
+python3 scripts/security/lib/vulnerability_assessor.py ./api --severity high --json --output vuln_scan_api.json
 VULN_API_STATUS=$?
 
 log_info "Verificando Web (npm)..."
-python3 .agents/skills/senior-secops/scripts/vulnerability_assessor.py ./web --severity high
+python3 scripts/security/lib/vulnerability_assessor.py ./web --severity high --json --output vuln_scan_web.json
 VULN_WEB_STATUS=$?
 
 # 3. Verificação de Conformidade (Compliance)
 log_info "Executando Compliance Checker..."
-python3 .agents/skills/senior-secops/scripts/compliance_checker.py . --framework all
+python3 scripts/security/lib/compliance_checker.py . --framework all --json --output compliance_scan.json
 COMPLIANCE_STATUS=$?
 
 # Resumo
