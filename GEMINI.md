@@ -120,6 +120,11 @@ The agent must strictly adhere to the patterns defined in the `.claude/rules/` d
 -   **Logging:** Canonical logging with trace IDs.
 -   **AI/RAG:** Semantic search patterns with pgvector.
 
+### Documentation & Internationalization (i18n)
+-   **Multilingual README:** The project uses a multilingual README structure (`README.md` for Portuguese, `README.en.md` for English).
+-   **Language Switcher:** A canonical language switcher is placed near the top of these files wrapped in `<!-- README-I18N:START -->` and `<!-- README-I18N:END -->` markers.
+-   **Maintenance:** When updating the README, the agent must update both language variants and preserve the exact structure of the switcher blocks and markdown elements (badges, code fences).
+
 ---
 
 ## Operations & Maintenance
