@@ -15,6 +15,7 @@ This file provides architectural context, development conventions, and operation
 -   **Storage:** Vercel Blob (Cloud) / Local Storage (Development)
 -   **Authentication:** JWT with email verification and TOTP (Two-Factor Authentication)
 -   **Testing:** Vitest & Playwright (Frontend), Go Testing (Backend)
+-   **CI/CD:** GitHub Actions (Node.js 24 runtime), CodeQL v4, SARIF reporting.
 
 ---
 
@@ -37,6 +38,13 @@ Uses the Next.js App Router for optimized performance and UX.
 -   `src/components/`: Reusable UI components (shadcn/ui based).
 -   `src/hooks/`: Custom React hooks for state management.
 -   `src/lib/`: Utilities, store (Zustand), and validations (Zod).
+
+### Security & Tooling (`scripts/security/`)
+The security layer is decoupled from the core application logic.
+
+-   `scripts/security/lib/`: Python-based security scanner, vulnerability assessor, and compliance checker.
+-   `scripts/security/references/`: Security standards and compliance requirements documentation.
+-   `scripts/test-security.sh`: Main entry point for local and CI security audits.
 
 ---
 
@@ -61,6 +69,7 @@ Located in the root `scripts/` directory:
 -   `scripts/test-backend.sh`: Runs backend tests.
 -   `scripts/test-frontend.sh`: Runs frontend vitest tests.
 -   `scripts/test-e2e.sh`: Runs Playwright E2E tests.
+-   `scripts/test-security.sh`: Runs the full security audit suite (SAST, Dependency Check, Compliance).
 
 ---
 
@@ -74,11 +83,17 @@ Located in the root `scripts/` directory:
 -   Never log sensitive data (passwords, tokens).
 -   Use `AuthMiddleware` for protected routes.
 -   Validate all inputs using Zod (Frontend) and appropriate checks (Backend).
+-   **SAST Bypass:** Use `// nosec` comments to bypass false positives in security scans for reviewed and trusted lines (e.g., static JSON-LD or trusted innerHTML).
 
 ### AI Integration
 -   Gemini model used: `gemini-2.5-flash-lite`.
 -   Prompts are structured to return JSON for structured analysis or text for chat.
 -   Always sanitize/clean AI JSON responses using `cleanJSONResponse`.
+
+### CI/CD Integration
+-   GitHub Actions are configured to use Node.js 24.
+-   `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` is required for modern action support.
+-   `gosec` results are exported in SARIF format for native GitHub Code Scanning integration.
 
 ---
 
@@ -87,4 +102,6 @@ Located in the root `scripts/` directory:
 -   `api/pkg/ai/gemini.go`: AI core integration.
 -   `web/src/app/page.tsx`: Frontend landing page.
 -   `web/package.json`: Frontend dependencies and scripts.
+-   `scripts/test-security.sh`: Security audit orchestration.
+-   `.github/workflows/ci.yml`: CI/CD pipeline definition.
 -   `docker-compose.yml`: Infrastructure setup (PostgreSQL).
