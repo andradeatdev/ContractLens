@@ -104,6 +104,24 @@ Located in the root `scripts/` directory:
 
 ---
 
+## Agent Mandates & Automated Documentation
+
+### Permanent Learning Rule
+**The agent must update this file (GEMINI.md) at the end of every session where significant new information is discovered.** This includes:
+-   **Bug Fix Patterns:** "To resolve bug X, Y must be done" (e.g., NTFS artifact removal for Git issues).
+-   **Undocumented Dependencies:** Any system-level or library requirements found during execution.
+-   **Quirks:** Specific project behaviors (e.g., deployment steps, specific environment variable needs).
+
+### Architectural & Coding Rules
+The agent must strictly adhere to the patterns defined in the `.claude/rules/` directory:
+-   **API Handling:** Standardized response structures.
+-   **Architecture:** Hexagonal/Ports & Adapters and Infrastructure Abstraction.
+-   **Frontend:** View Transitions, Type-safe forms, and Client-side state persistence.
+-   **Logging:** Canonical logging with trace IDs.
+-   **AI/RAG:** Semantic search patterns with pgvector.
+
+---
+
 ## Operations & Maintenance
 
 ### Dependency Management
