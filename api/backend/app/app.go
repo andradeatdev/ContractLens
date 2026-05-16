@@ -33,7 +33,7 @@ func NewApp() http.Handler {
 	authHandler := handlers.NewAuthHandler(authService)
 
 	mux := http.NewServeMux()
-	registerRoutes(mux, authHandler, contractHandler)
+	registerRoutes(mux, authHandler, contractHandler, contractRepo)
 
 	return handlers.CanonicalLogMiddleware(mux)
 }
@@ -49,6 +49,15 @@ func initDB() *gorm.DB {
 		if sslmode == "" {
 			sslmode = "disable"
 		}
+		maskedDSN := fmt.Sprintf("host=%s user=%s password=**** dbname=%s port=%s sslmode=%s",
+			os.Getenv("DB_HOST"),
+			os.Getenv("DB_USER"),
+			os.Getenv("DB_NAME"),
+			os.Getenv("DB_PORT"),
+			sslmode,
+		)
+		log.Printf("Conectando ao banco: %s", maskedDSN)
+
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 			os.Getenv("DB_HOST"),
 			os.Getenv("DB_USER"),
@@ -65,11 +74,19 @@ func initDB() *gorm.DB {
 	}
 
 	// Habilita a extensão pgvector se estiver usando Postgres
-	if os.Getenv("DATABASE_URL") != "" || os.Getenv("POSTGRES_URL") != "" {
+	if os.Getenv("DB_HOST") != "" {
 		db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
 	}
 
-	if err := db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{}, &models.DocumentChunk{}); err != nil {
+	err = db.AutoMigrate(
+		&models.User{},
+		&models.Contract{},
+		&models.Risk{},
+		&models.ChatMessage{},
+		&models.Note{},
+		&models.DocumentChunk{},
+	)
+	if err != nil {
 		log.Printf("ERRO na migração do banco: %v", err)
 	}
 
@@ -91,7 +108,7 @@ func initStorage() services.FileStorage {
 	return &services.LocalStorageAdapter{UploadDir: uploadDir}
 }
 
-func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *handlers.ContractHandler) {
+func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *handlers.ContractHandler, contractRepo repositories.Repository) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "OK")
 	})
@@ -103,18 +120,18 @@ func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *ha
 	mux.HandleFunc("/auth/resend-code", corsMiddleware(auth.ResendVerificationCode))
 
 	// Protegidas
-	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contract.Upload)))
-	mux.HandleFunc("/contracts/compare", corsMiddleware(handlers.AuthMiddleware(contract.Compare)))
-	mux.HandleFunc("/search", corsMiddleware(handlers.AuthMiddleware(contract.Search)))
-	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contract.Chat)))
-	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contract.Activity)))
-	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contract.Stats)))
+	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Upload)))
+	mux.HandleFunc("/contracts/compare", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Compare)))
+	mux.HandleFunc("/search", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Search)))
+	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Chat)))
+	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Activity)))
+	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Stats)))
 	
-	mux.HandleFunc("/user", corsMiddleware(handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/user", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
 		handleUserRoute(w, r, contract)
 	})))
 	
-	mux.HandleFunc("/contracts/", corsMiddleware(handlers.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contracts/", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
 		handleContractsRoute(w, r, contract)
 	})))
 }

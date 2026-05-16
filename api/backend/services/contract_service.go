@@ -51,7 +51,7 @@ func (g *GeminiAnalyzer) GlobalSearch(ctx context.Context, contextChunks []strin
 	return ai.GlobalSearchChat(ctx, contextChunks, question)
 }
 
-type FileStorage interface {
+type TextExtractor interface {
 	Extract(data []byte) (string, error)
 }
 

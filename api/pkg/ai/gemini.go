@@ -110,7 +110,7 @@ func GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
 	defer func() { _ = client.Close() }()
 
 	// Usa o modelo de embedding mais recente e otimizado
-	model := client.EmbeddingModel("text-embedding-004")
+	model := client.EmbeddingModel("gemini-embedding-001")
 	res, err := model.EmbedContent(ctx, genai.Text(text))
 	if err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ Responda em Português do Brasil com um tom profissional e objetivo.`, baseText,
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {

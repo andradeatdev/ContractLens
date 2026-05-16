@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
@@ -14,7 +15,7 @@ type contextKey string
 
 const UserIDKey contextKey = "user_id"
 
-func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func AuthMiddleware(repo repositories.Repository, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -59,6 +60,14 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		userID := uint(userIDFloat)
+
+		// Verificar se o usuário ainda existe no banco de dados
+		_, err = repo.GetUser(userID)
+		if err != nil {
+			SendJSONError(w, "Usuário não encontrado ou sessão inválida", http.StatusUnauthorized)
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next(w, r.WithContext(ctx))
 	}
