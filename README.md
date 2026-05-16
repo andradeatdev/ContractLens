@@ -5,6 +5,12 @@
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Gemini AI](https://img.shields.io/badge/AI-Gemini_Pro-blue?style=flat-square)](https://ai.google.dev/)
 
+<!-- README-I18N:START -->
+
+**Português** | [English](./README.en.md)
+
+<!-- README-I18N:END -->
+
 Análise inteligente de contratos jurídicos utilizando Inteligência Artificial para identificação de riscos, resumo de cláusulas e chat interativo.
 
 ![Dashboard Preview](https://raw.githubusercontent.com/andradeatdev/ai_contract_analyzer/main/public/preview.png)
