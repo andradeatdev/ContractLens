@@ -178,38 +178,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-32">
-          <div className="container px-4 md:px-8 mx-auto">
-            <motion.div 
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.95 }}
-              viewport={{ once: true }}
-              className="bg-primary rounded-[3.5rem] p-12 md:p-24 text-center text-primary-foreground relative overflow-hidden shadow-2xl shadow-primary/40 group"
-            >
-              <div className="relative z-10 max-w-3xl mx-auto">
-                <h2 className="text-4xl md:text-6xl font-black mb-8 text-white tracking-tighter leading-none">
-                  Entenda antes de assinar.
-                </h2>
-                <p className="text-primary-foreground/90 text-xl mb-12 text-pretty leading-relaxed">
-                  Junte-se a milhares de usuários que economizam tempo e evitam problemas jurídicos com nossa plataforma.
-                </p>
-                <Button
-                  asChild
-                  variant="secondary"
-                  size="lg"
-                  className="rounded-2xl h-16 px-12 text-xl font-bold bg-white text-primary hover:bg-white/90 shadow-xl active:scale-95 cursor-pointer"
-                >
-                  <Link href="/register">Começar Gratuitamente</Link>
-                </Button>
-              </div>
-              
-              {/* Decorative blobs */}
-              <div className="absolute -top-24 -left-24 w-80 h-80 bg-white/10 blur-[100px] rounded-full group-hover:scale-110 transition-transform duration-700" />
-              <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-white/10 blur-[100px] rounded-full group-hover:scale-110 transition-transform duration-700" />
-            </motion.div>
-          </div>
-        </section>
 
         {/* Footer */}
         <footer className="py-20 border-t border-border bg-background">
@@ -231,23 +199,23 @@ export default function LandingPage() {
                   <ul className="space-y-3">
                     <li><Link href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">Funcionalidades</Link></li>
                     <li><Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-primary transition-colors">Como funciona</Link></li>
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Enterprise</Link></li>
+                    <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Enterprise</Link></li>
                   </ul>
                 </div>
                 <div className="space-y-4">
                   <h4 className="font-bold text-sm">Empresa</h4>
                   <ul className="space-y-3">
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Nossa história</Link></li>
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Carreiras</Link></li>
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contato</Link></li>
+                    <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Nossa história</Link></li>
+                    <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors">Blog</Link></li>
+                    <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contato</Link></li>
                   </ul>
                 </div>
                 <div className="space-y-4">
                   <h4 className="font-bold text-sm">Jurídico</h4>
                   <ul className="space-y-3">
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Termos de uso</Link></li>
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacidade</Link></li>
-                    <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Cookies</Link></li>
+                    <li><Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Termos de uso</Link></li>
+                    <li><Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacidade</Link></li>
+                    <li><Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Cookies</Link></li>
                   </ul>
                 </div>
               </div>
