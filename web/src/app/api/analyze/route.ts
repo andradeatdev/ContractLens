@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+    
+    if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const contentType = req.headers.get("content-type") || "";
     const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8080";
 
@@ -12,7 +20,7 @@ export async function POST(req: NextRequest) {
       response = await fetch(`${backendUrl}/api/v1/contracts`, {
         method: "POST",
         headers: {
-            // FormData will set its own boundary, do NOT set Content-Type header
+            "Authorization": `Bearer ${token}`
         },
         body: formData,
       });
@@ -20,7 +28,10 @@ export async function POST(req: NextRequest) {
       const body = await req.json();
       response = await fetch(`${backendUrl}/api/v1/analysis/clauses`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(body),
       });
     }
