@@ -54,29 +54,29 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground transition-colors duration-300">
         <NextTopLoader 
-          color="hsl(var(--primary))" 
+          color="var(--primary)" 
           showSpinner={false}
           height={3}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Contract Lens",
+              "operatingSystem": "Web",
+              "applicationCategory": "BusinessApplication",
+              "description": "Análise inteligente de contratos jurídicos utilizando IA para identificação de riscos e resumo de cláusulas.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "BRL"
+              }
+            })
+          }}
+        />
         <Providers>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "SoftwareApplication",
-                "name": "Contract Lens",
-                "operatingSystem": "Web",
-                "applicationCategory": "BusinessApplication",
-                "description": "Análise inteligente de contratos jurídicos utilizando IA para identificação de riscos e resumo de cláusulas.",
-                "offers": {
-                  "@type": "Offer",
-                  "price": "0",
-                  "priceCurrency": "BRL"
-                }
-              })
-            }}
-          />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

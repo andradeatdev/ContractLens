@@ -41,7 +41,7 @@ export default function HistoryPage() {
   const navigateToContract = (slug: string) => {
     startTransition(() => {
       addTransitionType('nav-forward');
-      router.push(`/dashboard/contracts/${slug}`);
+      router.push(`/dashboard/contracts/s/${slug}`);
     });
   };
 
