@@ -105,7 +105,7 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
       if (!response.ok) throw new Error("Falha ao enviar mensagem");
       
       const data = await response.json();
-      setMessages([...newMessages, { role: "assistant", message: data.response }]);
+      setMessages([...newMessages, { role: "assistant", message: data.answer || data.response }]);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
