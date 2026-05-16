@@ -34,9 +34,7 @@ export function SidebarHeader({ onNavigate }: SidebarHeaderProps) {
             }}
             className="flex items-center gap-2 group shrink-0 transition-all hover:opacity-80"
           >
-            <div className="bg-primary p-1.5 rounded-lg shadow-lg shadow-primary/20 shrink-0">
-              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src="/logo-icon.svg" alt="Contract Lens Logo" className="h-8 w-8 transition-transform group-hover:rotate-12" />
           </Link>
 
           <Tooltip>

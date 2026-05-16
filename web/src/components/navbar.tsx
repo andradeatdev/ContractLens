@@ -40,9 +40,7 @@ export function Navbar() {
           }}
           className="flex items-center gap-2 group"
         >
-          <div className="bg-primary p-1.5 rounded-lg group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-primary/20">
-            <Shield className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src="/logo-icon.svg" alt="Contract Lens Logo" className="h-8 w-8 group-hover:rotate-12 transition-transform duration-300" />
           <span className="text-xl font-bold tracking-tight text-foreground">Contract <span className="text-primary">Lens</span></span>
 
         </Link>
