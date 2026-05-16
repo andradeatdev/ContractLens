@@ -45,6 +45,7 @@ interface ContractAnalysisProps {
 export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: ContractAnalysisProps) {
   const { chatDrafts, setChatDraft } = useUIStore();
   const queryClient = useQueryClient();
+  const [isFullWidth, setIsFullWidth] = useState(false);
   
   // Chat state
   const [messages, setMessages] = useState<Message[]>(analysis.messages || []);
@@ -178,124 +179,131 @@ export function ContractAnalysis({ analysis, onReset, isViewOnly = false }: Cont
   });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
-      <SelectionPopover 
-        selection={selection}
-        isOpen={isNotePopoverOpen}
-        onOpenChange={setIsNotePopoverOpen}
-        noteContent={noteContent}
-        onNoteContentChange={setNoteContent}
-        selectedColor={selectedColor}
-        onColorSelect={setSelectedColor}
-        isPending={addNoteMutation.isPending}
-        onSaveNote={() => addNoteMutation.mutate({
-          content: noteContent,
-          selected_text: selection?.text || "",
-          color: selectedColor
-        })}
-      />
-
-      {/* Left Column: Analysis Details */}
-      <div className="lg:col-span-7 space-y-8 min-w-0">
-        <Tabs defaultValue="overview" className="w-full">
-          <div className="flex items-center justify-between mb-6">
-            <TabsList className="bg-muted/50 p-1 rounded-xl h-12 border border-border/50">
-              <TabsTrigger 
-                value="overview" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 px-4 h-full cursor-pointer"
-              >
-                <FileText className="h-4 w-4" />
-                Resumo
-              </TabsTrigger>
-              <TabsTrigger 
-                value="pdf" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 px-4 h-full cursor-pointer"
-              >
-                <FileText className="h-4 w-4" />
-                Documento
-              </TabsTrigger>
-            </TabsList>
-            
-            {onReset && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onReset}
-                className="text-muted-foreground hover:text-foreground font-medium text-xs gap-2 cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-                Fechar análise
-              </Button>
-            )}
-          </div>
-
-          <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 m-0">
-            <ContractOverview 
-              id={analysis.id}
-              filename={analysis.filename}
-              summary={analysis.summary}
-              total_value={analysis.total_value}
-              expiration={analysis.expiration}
-              parties={analysis.parties}
-              legal_venue={analysis.legal_venue}
-              isViewOnly={isViewOnly}
-              onDelete={() => deleteContractMutation.mutate()}
-            />
-            <ContractRisks risks={analysis.risks} />
-          </TabsContent>
-
-          <TabsContent value="pdf" className="">
-            <ContractPdfViewer contractId={analysis.id} />
-          </TabsContent>
-        </Tabs>
+    <div className={cn("transition-all duration-300", isFullWidth ? "max-w-full px-8" : "max-w-6xl mx-auto")}>
+      <div className="flex justify-end mb-4">
+          <Button variant="outline" size="sm" onClick={() => setIsFullWidth(!isFullWidth)} className="rounded-xl font-bold text-xs gap-2 cursor-pointer">
+              {isFullWidth ? "Visualização centralizada" : "Expandir tela total"}
+          </Button>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
+        <SelectionPopover 
+          selection={selection}
+          isOpen={isNotePopoverOpen}
+          onOpenChange={setIsNotePopoverOpen}
+          noteContent={noteContent}
+          onNoteContentChange={setNoteContent}
+          selectedColor={selectedColor}
+          onColorSelect={setSelectedColor}
+          isPending={addNoteMutation.isPending}
+          onSaveNote={() => addNoteMutation.mutate({
+            content: noteContent,
+            selected_text: selection?.text || "",
+            color: selectedColor
+          })}
+        />
 
-      {/* Right Column: Chat & Notes Sidebar */}
-      <Card 
-        className={cn(
-          "lg:col-span-5 flex flex-col transition-all border-border/50 shadow-2xl shadow-primary/5 overflow-hidden",
-          "h-[600px] lg:h-[calc(100dvh-10rem)] lg:max-h-[850px]",
-          "lg:sticky lg:top-0 self-start"
-        )}
-      >
-        <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
-          <CardHeader className="border-b bg-muted/5 shrink-0 p-0">
-            <TabsList className="w-full bg-transparent h-14 rounded-none p-1 gap-1">
-              <TabsTrigger 
-                value="chat" 
-                className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 cursor-pointer"
-              >
-                <MessageSquare className="h-4 w-4" />
-                Assistente IA
-              </TabsTrigger>
-              <TabsTrigger 
-                value="notes" 
-                className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 cursor-pointer"
-              >
-                <StickyNote className="h-4 w-4" />
-                Notas ({analysis.notes?.length || 0})
-              </TabsTrigger>
-            </TabsList>
-          </CardHeader>
+        {/* Left Column: Analysis Details */}
+        <div className="lg:col-span-7 space-y-8 min-w-0">
+          <Tabs defaultValue="overview" className="w-full">
+            <div className="flex items-center justify-between mb-6">
+              <TabsList className="bg-muted/50 p-1 rounded-xl h-12 border border-border/50">
+                <TabsTrigger 
+                  value="overview" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 px-4 h-full cursor-pointer"
+                >
+                  <FileText className="h-4 w-4" />
+                  Resumo
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="pdf" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 px-4 h-full cursor-pointer"
+                >
+                  <FileText className="h-4 w-4" />
+                  Documento
+                </TabsTrigger>
+              </TabsList>
+              
+              {onReset && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={onReset}
+                  className="text-muted-foreground hover:text-foreground font-medium text-xs gap-2 cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                  Fechar análise
+                </Button>
+              )}
+            </div>
 
-          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 m-0">
-            <ContractChat 
-              messages={messages}
-              input={input}
-              loading={chatLoading}
-              onInputChange={handleInputChange}
-              onSendMessage={handleSendMessage}
-            />
-          </TabsContent>
+            <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 m-0">
+              <ContractOverview 
+                id={analysis.id}
+                filename={analysis.filename}
+                summary={analysis.summary}
+                total_value={analysis.total_value}
+                expiration={analysis.expiration}
+                parties={analysis.parties}
+                legal_venue={analysis.legal_venue}
+                isViewOnly={isViewOnly}
+                onDelete={() => deleteContractMutation.mutate()}
+              />
+              <ContractRisks risks={analysis.risks} />
+            </TabsContent>
 
-          <TabsContent value="notes" className="flex-1 flex flex-col min-h-0 m-0 bg-muted/5">
-            <ContractNotes 
-              notes={analysis.notes || []}
-              onDeleteNote={(id) => deleteNoteMutation.mutate(id)}
-            />
-          </TabsContent>
-        </Tabs>
-      </Card>
+            <TabsContent value="pdf" className="">
+              <ContractPdfViewer contractId={analysis.id} />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Right Column: Chat & Notes Sidebar */}
+        <Card 
+          className={cn(
+            "lg:col-span-5 flex flex-col transition-all border-border/50 shadow-2xl shadow-primary/5 overflow-hidden",
+            "h-[600px] lg:h-[calc(100dvh-10rem)] lg:max-h-[850px]",
+            "lg:sticky lg:top-0 self-start"
+          )}
+        >
+          <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
+            <CardHeader className="border-b bg-muted/5 shrink-0 p-0">
+              <TabsList className="w-full bg-transparent h-14 rounded-none p-1 gap-1">
+                <TabsTrigger 
+                  value="chat" 
+                  className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 cursor-pointer"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Assistente IA
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notes" 
+                  className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold text-xs gap-2 cursor-pointer"
+                >
+                  <StickyNote className="h-4 w-4" />
+                  Notas ({analysis.notes?.length || 0})
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
+
+            <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 m-0">
+              <ContractChat 
+                messages={messages}
+                input={input}
+                loading={chatLoading}
+                onInputChange={handleInputChange}
+                onSendMessage={handleSendMessage}
+              />
+            </TabsContent>
+
+            <TabsContent value="notes" className="flex-1 flex flex-col min-h-0 m-0 bg-muted/5">
+              <ContractNotes 
+                notes={analysis.notes || []}
+                onDeleteNote={(id) => deleteNoteMutation.mutate(id)}
+              />
+            </TabsContent>
+          </Tabs>
+        </Card>
+      </div>
     </div>
   );
 }

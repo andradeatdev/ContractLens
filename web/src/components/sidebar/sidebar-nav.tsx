@@ -32,6 +32,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
     <SidebarContent className={cn("px-4 transition-all", isCollapsed ? "px-2" : "px-4")}>
       <SidebarMenu className="gap-1">
         <GlobalSearch />
+        <div className="h-px bg-border my-4 mx-2" />
         
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.href}>

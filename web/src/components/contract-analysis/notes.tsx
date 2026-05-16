@@ -21,10 +21,10 @@ interface ContractNotesProps {
 }
 
 const colors = [
-  { name: "yellow", class: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
-  { name: "red", class: "bg-red-50 text-red-700 border-red-100", dot: "bg-red-500" },
-  { name: "green", class: "bg-emerald-50 text-emerald-700 border-emerald-100", dot: "bg-emerald-500" },
-  { name: "blue", class: "bg-blue-50 text-blue-700 border-blue-100", dot: "bg-blue-500" },
+  { name: "yellow", class: "border-l-yellow-400", dot: "bg-yellow-400" },
+  { name: "red", class: "border-l-red-500", dot: "bg-red-500" },
+  { name: "green", class: "border-l-emerald-500", dot: "bg-emerald-500" },
+  { name: "blue", class: "border-l-blue-500", dot: "bg-blue-500" },
 ];
 
 export function ContractNotes({ notes, onDeleteNote }: ContractNotesProps) {
@@ -45,33 +45,37 @@ export function ContractNotes({ notes, onDeleteNote }: ContractNotesProps) {
         {notes?.map((note) => {
           const colorConfig = colors.find(c => c.name === note.color) || colors[0];
           return (
-            <Card key={note.id} className="overflow-hidden border-border/50 group">
-              <CardHeader className={cn("p-3 border-b flex flex-row items-center justify-between space-y-0", colorConfig.class)}>
-                <div className="flex items-center gap-2">
-                  <Type className="h-3 w-3" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Anotação</span>
+            <div 
+              key={note.id} 
+              className={cn(
+                "p-4 rounded-xl bg-background border border-border shadow-sm border-l-4 transition-all hover:shadow-md",
+                colorConfig.class
+              )}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <StickyNote className="h-3 w-3" />
+                  <span>Anotação</span>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-6 w-6 rounded-lg hover:bg-black/5 cursor-pointer"
+                  className="h-6 w-6 rounded-lg hover:bg-muted cursor-pointer text-muted-foreground"
                   onClick={() => onDeleteNote(note.id)}
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
-              </CardHeader>
-              <CardContent className="p-3 space-y-3 bg-background">
-                <div className="p-2 rounded-lg bg-muted/30 border border-border italic text-[11px] text-muted-foreground">
-                  &quot;{note.selected_text}&quot;
-                </div>
-                <p className="text-sm leading-relaxed font-medium">
-                  {note.content}
-                </p>
-                <div className="text-[10px] text-muted-foreground flex justify-end">
-                  {new Date(note.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="text-sm font-medium leading-relaxed mb-3 text-foreground">
+                {note.content}
+              </p>
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-[11px] text-muted-foreground italic mb-3">
+                &quot;{note.selected_text}&quot;
+              </div>
+              <div className="text-[10px] font-bold text-muted-foreground/50">
+                {new Date(note.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
           );
         })}
       </div>

@@ -105,7 +105,11 @@ export function ContractOverview({
         <MetadataCard 
           icon={<DollarSign className="h-4 w-4 text-emerald-500" />}
           label="Valor Total"
-          value={total_value || "Não especificado"}
+          value={
+            total_value && !isNaN(Number(total_value)) 
+              ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(total_value))
+              : (total_value || "Não especificado")
+          }
         />
         <MetadataCard 
           icon={<Calendar className="h-4 w-4 text-blue-500" />}
