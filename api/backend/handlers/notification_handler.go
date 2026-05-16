@@ -22,7 +22,11 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	userID := r.Context().Value("user_id").(uint)
+	userID, ok := r.Context().Value(UserIDKey).(uint)
+	if !ok {
+		SendJSONError(w, "Erro de autenticação interno", http.StatusUnauthorized)
+		return
+	}
 
 	var req struct {
 		Endpoint string `json:"endpoint"`
