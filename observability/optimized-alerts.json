@@ -1,0 +1,51 @@
+{
+  "alerts": [
+    {
+      "name": "HighLatencyAPI",
+      "metric": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
+      "threshold": 0.5,
+      "severity": "critical",
+      "description": "API latency is above 500ms for 5 minutes.",
+      "for": "5m",
+      "annotations": {
+        "summary": "Alert: HighLatencyAPI",
+        "description": "This alert requires a description. Please update with specific details about the condition and impact."
+      },
+      "labels": {
+        "severity": "warning"
+      }
+    },
+    {
+      "alert": "HighErrorRate",
+      "expr": "sum(rate(http_requests_total{code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) > 0.01",
+      "for": "5m",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "High error rate detected",
+        "description": "Error rate is above 1% for 5 minutes.",
+        "generated": "true"
+      }
+    },
+    {
+      "alert": "HighLatency",
+      "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5",
+      "for": "5m",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "High request latency detected",
+        "description": "The 95th percentile latency is above 500ms for 5 minutes.",
+        "generated": "true"
+      }
+    }
+  ],
+  "optimization_metadata": {
+    "optimized_at": "2026-05-16T02:19:57.749588Z",
+    "original_count": 4,
+    "optimized_count": 3,
+    "changes_applied": []
+  }
+}

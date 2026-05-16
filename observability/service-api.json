@@ -1,0 +1,36 @@
+{
+  "name": "contract-lens-api",
+  "type": "api",
+  "criticality": "high",
+  "user_facing": true,
+  "description": "Backend API for AI Contract Analyzer, handling PDF processing, AI analysis, and RAG.",
+  "components": [
+    {
+      "name": "gemini-ai",
+      "type": "external-api",
+      "description": "Google Gemini Pro API for analysis and chat."
+    },
+    {
+      "name": "postgresql-pgvector",
+      "type": "database",
+      "description": "Primary database with vector search capabilities."
+    },
+    {
+      "name": "pdf-extractor",
+      "type": "worker",
+      "description": "Local worker for text extraction from PDF files."
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "google-gemini-api",
+      "type": "external",
+      "criticality": "high"
+    },
+    {
+      "name": "postgresql",
+      "type": "database",
+      "criticality": "high"
+    }
+  ]
+}

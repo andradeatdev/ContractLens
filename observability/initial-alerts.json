@@ -1,0 +1,32 @@
+{
+  "alerts": [
+    {
+      "name": "HighLatencyAPI",
+      "metric": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
+      "threshold": 0.5,
+      "severity": "critical",
+      "description": "API latency is above 500ms for 5 minutes."
+    },
+    {
+      "name": "HighErrorRateAPI",
+      "metric": "rate(http_requests_total{status=~'5..'}[5m]) / rate(http_requests_total[5m])",
+      "threshold": 0.05,
+      "severity": "critical",
+      "description": "API error rate is above 5% for 5 minutes."
+    },
+    {
+      "name": "GeminiAPIError",
+      "metric": "rate(gemini_api_errors_total[5m])",
+      "threshold": 1,
+      "severity": "critical",
+      "description": "Gemini AI API is returning errors."
+    },
+    {
+      "name": "HighCPULoad",
+      "metric": "container_cpu_usage_seconds_total",
+      "threshold": 0.8,
+      "severity": "warning",
+      "description": "CPU usage is above 80%."
+    }
+  ]
+}

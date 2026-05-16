@@ -1,0 +1,31 @@
+{
+  "name": "contract-lens-web",
+  "type": "web",
+  "criticality": "high",
+  "user_facing": true,
+  "description": "Next.js frontend for Contract Lens, providing the user interface and traffic light tool.",
+  "components": [
+    {
+      "name": "nextjs-app",
+      "type": "application",
+      "description": "Next.js 16 App Router application."
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "contract-lens-api",
+      "type": "api",
+      "criticality": "high"
+    }
+  ],
+  "pages": [
+    {
+      "path": "/",
+      "sla_load_time_ms": 1000
+    },
+    {
+      "path": "/dashboard",
+      "sla_load_time_ms": 2000
+    }
+  ]
+}
