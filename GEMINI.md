@@ -13,7 +13,7 @@ This file provides architectural context, development conventions, and operation
 -   **AI:** Google Gemini Pro (via `gemini-2.5-flash-lite` model)
 -   **Database:** PostgreSQL (Production) / SQLite (Testing/Development) with GORM
 -   **Storage:** Vercel Blob (Cloud) / Local Storage (Development)
--   **Authentication:** JWT with email verification and TOTP (Two-Factor Authentication)
+-   **Authentication:** JWT with email verification, TOTP (2FA), and Web Push Notifications.
 -   **Testing:** Vitest & Playwright (Frontend), Go Testing (Backend)
 -   **CI/CD:** GitHub Actions (Node.js 24 runtime), CodeQL v4, SARIF reporting.
 
@@ -27,7 +27,7 @@ Follows Clean Architecture principles to ensure testability and independence fro
 -   `backend/handlers/`: HTTP transport layer (REST API endpoints).
 -   `backend/services/`: Core business logic and use cases.
 -   `backend/repositories/`: Data persistence (GORM implementations).
--   `backend/models/`: Domain entities (User, Contract, Risk, ChatMessage, Note).
+-   `backend/models/`: Domain entities (User, Contract, Risk, ChatMessage, Note, PushSubscription).
 -   `pkg/ai/`: Gemini AI integration logic.
 -   `pkg/pdf/`: PDF processing and text extraction.
 
@@ -38,6 +38,13 @@ Uses the Next.js App Router for optimized performance and UX.
 -   `src/components/`: Reusable UI components (shadcn/ui based).
 -   `src/hooks/`: Custom React hooks for state management.
 -   `src/lib/`: Utilities, store (Zustand), and validations (Zod).
+-   `public/sw.js`: Service Worker for PWA and Push Notifications.
+
+### Observability (`observability/`)
+Infrastructure for monitoring and service health.
+-   **Dashboards:** API and Web dashboards in JSON format (ready for import).
+-   **SLO Framework:** Defined Service Level Objectives for both API and Web layers.
+-   **Alerts:** Pre-configured alerting rules for production monitoring.
 
 ### Security & Tooling (`scripts/security/`)
 The security layer is decoupled from the core application logic.
@@ -97,6 +104,20 @@ Located in the root `scripts/` directory:
 
 ---
 
+## Operations & Maintenance
+
+### Dependency Management
+-   **Dependabot:** Enabled for `npm` (web), `gomod` (api), and `github-actions`.
+-   **GH CLI Workflow:** Use `gh pr list` and `gh pr merge --squash` for efficient management of dependency PRs.
+-   **Conflicts:** If multiple dependency PRs conflict, use `@dependabot rebase` in the comments to refresh them against the latest `main`.
+
+### Troubleshooting Git/Filesystem Issues
+-   **NTFS Artifacts:** When working in WSL/Windows environments, files like `:Zone.Identifier` can corrupt Git references.
+    -   *Fix:* `find . -name "*:Zone.Identifier" -delete` and `git gc --prune=now`.
+-   **File Mode Permissions:** If Git reports constant mode changes (100755 vs 100644), use `git config core.filemode false`.
+
+---
+
 ## Key Files for Reference
 -   `api/backend/app/app.go`: Backend initialization and routing.
 -   `api/pkg/ai/gemini.go`: AI core integration.
@@ -104,4 +125,5 @@ Located in the root `scripts/` directory:
 -   `web/package.json`: Frontend dependencies and scripts.
 -   `scripts/test-security.sh`: Security audit orchestration.
 -   `.github/workflows/ci.yml`: CI/CD pipeline definition.
+-   `observability/slo-framework-api.json`: API service health definitions.
 -   `docker-compose.yml`: Infrastructure setup (PostgreSQL).
