@@ -14,72 +14,32 @@ import (
 
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/models"
 	"github.com/andradeatdev/ai_contract_analyzer/api/backend/repositories"
-	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/ai"
-	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/pdf"
-	"github.com/pgvector/pgvector-go"
+	"github.com/andradeatdev/ai_contract_analyzer/api/pkg/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
-
-type AIAnalyzer interface {
-	Analyze(ctx context.Context, text string) (*ai.AnalysisResult, error)
-	Chat(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error)
-	GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
-	Compare(ctx context.Context, baseText, newText string) (string, error)
-	GlobalSearch(ctx context.Context, contextChunks []string, question string) (string, error)
-}
-
-type GeminiAnalyzer struct{}
-
-func (g *GeminiAnalyzer) Analyze(ctx context.Context, text string) (*ai.AnalysisResult, error) {
-	return ai.AnalyzeContract(ctx, text)
-}
-
-func (g *GeminiAnalyzer) Chat(ctx context.Context, contextChunks []string, history []models.ChatMessage, question string) (string, error) {
-	return ai.ChatWithContract(ctx, contextChunks, history, question)
-}
-
-func (g *GeminiAnalyzer) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
-	return ai.GenerateEmbedding(ctx, text)
-}
-
-func (g *GeminiAnalyzer) Compare(ctx context.Context, baseText, newText string) (string, error) {
-	return ai.CompareContracts(ctx, baseText, newText)
-}
-
-func (g *GeminiAnalyzer) GlobalSearch(ctx context.Context, contextChunks []string, question string) (string, error) {
-	return ai.GlobalSearchChat(ctx, contextChunks, question)
-}
 
 type TextExtractor interface {
 	Extract(data []byte) (string, error)
 }
 
-type PDFExtractor struct{}
-
-func (p *PDFExtractor) Extract(data []byte) (string, error) {
-	return pdf.ExtractText(data)
-}
-
 type ContractService struct {
 	repo         repositories.Repository
-	ai           AIAnalyzer
+	ai           AIProvider
 	extractor    TextExtractor
 	storage      FileStorage
 	notification *NotificationService
+	rag          *RAGService
 }
 
-func NewContractService(repo repositories.Repository, analyzer AIAnalyzer, extractor TextExtractor, storage FileStorage) *ContractService {
-	if analyzer == nil {
-		analyzer = &GeminiAnalyzer{}
+func NewContractService(repo repositories.Repository, ai AIProvider, extractor TextExtractor, storage FileStorage, rag *RAGService) *ContractService {
+	return &ContractService{
+		repo:      repo,
+		ai:        ai,
+		extractor: extractor,
+		storage:   storage,
+		rag:       rag,
 	}
-	if extractor == nil {
-		extractor = &PDFExtractor{}
-	}
-	if storage == nil {
-		storage = &LocalStorageAdapter{UploadDir: "uploads"}
-	}
-	return &ContractService{repo: repo, ai: analyzer, extractor: extractor, storage: storage}
 }
 
 func (s *ContractService) SetNotificationService(notif *NotificationService) {
@@ -125,7 +85,7 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 	}
 
 	// 2. Análise de IA
-	analysis, err := s.ai.Analyze(ctx, text)
+	analysis, err := s.ai.AnalyzeContract(ctx, text)
 	if err != nil {
 		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
 	}
@@ -143,12 +103,12 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 
 	// 4. Montar Modelo
 	contract := &models.Contract{
-		UserID:   userID,
-		Slug:     s.GenerateSlugPublic(filename),
-		Filename: filename,
-		FilePath: filePath,
-		Content:  text,
-		Summary:  analysis.Summary,
+		UserID:     userID,
+		Slug:       s.GenerateSlugPublic(filename),
+		Filename:   filename,
+		FilePath:   filePath,
+		Content:    text,
+		Summary:    analysis.Summary,
 		TotalValue: analysis.TotalValue,
 		Expiration: analysis.Expiration,
 		Parties:    analysis.Parties,
@@ -165,85 +125,21 @@ func (s *ContractService) AnalyzeContract(ctx context.Context, userID uint, file
 	}
 
 	// 5. Salvar no Banco
+	contract.Slug = s.GenerateSlugPublic(filename)
+	contract.Content = text
+	contract.UserID = userID
+	contract.TotalValue = utils.ExtractCurrency(contract.TotalValue)
+
 	if err := s.repo.Create(contract); err != nil {
 		return nil, fmt.Errorf("Erro no repositório: %w", err)
 	}
 
-	// 6. Processar Chunks para RAG
-	go s.processChunks(context.Background(), contract.ID, text)
+	// 6. Processar Chunks para RAG via RAGService
+	if s.rag != nil {
+		go s.rag.ProcessChunks(context.Background(), contract.ID, text)
+	}
 
 	return contract, nil
-}
-
-func (s *ContractService) processChunks(ctx context.Context, contractID uint, text string) {
-	chunks := s.chunkText(text, 1000, 200)
-	var documentChunks []models.DocumentChunk
-
-	for _, content := range chunks {
-		embedding, err := s.ai.GenerateEmbedding(ctx, content)
-		if err != nil {
-			log.Printf("Warning: Falha ao gerar embedding para chunk: %v", err)
-			continue
-		}
-
-		documentChunks = append(documentChunks, models.DocumentChunk{
-			ContractID: contractID,
-			Content:    content,
-			Embedding:  pgvector.NewVector(embedding),
-		})
-	}
-
-	if err := s.repo.CreateChunks(documentChunks); err != nil {
-		log.Printf("Error: Falha ao salvar chunks no banco: %v", err)
-	} else {
-		// Notificar via Push
-		if s.notification != nil {
-			contract, err := s.repo.GetByID(contractID, 0)
-			if err == nil {
-				title := "Análise Concluída 🔍"
-				body := fmt.Sprintf("O contrato \"%s\" foi processado.", contract.Filename)
-
-				highRisks := 0
-				for _, r := range contract.Risks {
-					sev := strings.ToLower(r.Severity)
-					if sev == "high" || sev == "critico" || sev == "crítico" {
-						highRisks++
-					}
-				}
-
-				if highRisks > 0 {
-					title = "Riscos Críticos Detectados! ⚠️"
-					body = fmt.Sprintf("A análise de \"%s\" revelou %d riscos graves que requerem atenção.", contract.Filename, highRisks)
-				}
-
-				s.notification.SendNotification(contract.UserID, NotificationPayload{
-					Title: title,
-					Body:  body,
-					URL:   fmt.Sprintf("/dashboard/contracts/s/%s", contract.Slug),
-				})
-			}
-		}
-	}
-}
-
-func (s *ContractService) chunkText(text string, chunkSize int, overlap int) []string {
-	var chunks []string
-	if len(text) == 0 {
-		return chunks
-	}
-
-	// Simplificação: quebra por caracteres (em produção, tokens seriam ideais)
-	for i := 0; i < len(text); i += chunkSize - overlap {
-		end := i + chunkSize
-		if end > len(text) {
-			end = len(text)
-		}
-		chunks = append(chunks, text[i:end])
-		if end == len(text) {
-			break
-		}
-	}
-	return chunks
 }
 
 func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID uint) (*models.Contract, error) {
@@ -266,7 +162,7 @@ func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID
 	}
 
 	// 4. Análise de IA
-	analysis, err := s.ai.Analyze(ctx, text)
+	analysis, err := s.ai.AnalyzeContract(ctx, text)
 	if err != nil {
 		return nil, fmt.Errorf("Erro na análise da IA: %w", err)
 	}
@@ -304,8 +200,10 @@ func (s *ContractService) ReanalyzeContract(ctx context.Context, id uint, userID
 		return nil, fmt.Errorf("Erro ao salvar atualização: %w", err)
 	}
 
-	// 8. Processar novos Chunks para RAG
-	go s.processChunks(context.Background(), contract.ID, text)
+	// 8. Processar novos Chunks para RAG via RAGService
+	if s.rag != nil {
+		go s.rag.ProcessChunks(context.Background(), contract.ID, text)
+	}
 
 	return contract, nil
 }
@@ -319,7 +217,7 @@ func (s *ContractService) ExportAnalysis(id uint, userID uint) (string, string, 
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("# Relatório de Análise: %s\n\n", contract.Filename))
 	sb.WriteString(fmt.Sprintf("**Data da Análise:** %s\n\n", contract.UpdatedAt.Format("02/01/2006 15:04")))
-	
+
 	sb.WriteString("## Resumo Executivo\n")
 	sb.WriteString(contract.Summary + "\n\n")
 
@@ -334,7 +232,7 @@ func (s *ContractService) ExportAnalysis(id uint, userID uint) (string, string, 
 			} else if r.Severity == "medium" {
 				severityEmoji = "🟡"
 			}
-			
+
 			sb.WriteString(fmt.Sprintf("### %d. %s %s\n", i+1, severityEmoji, r.Title))
 			sb.WriteString(fmt.Sprintf("**Gravidade:** %s\n\n", cases.Title(language.BrazilianPortuguese).String(r.Severity)))
 			sb.WriteString(fmt.Sprintf("**Explicação:** %s\n\n", r.Explanation))
@@ -352,6 +250,9 @@ func (s *ContractService) ExportAnalysis(id uint, userID uint) (string, string, 
 }
 
 func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug string, question string) (string, error) {
+	// 0. Sanitize input
+	question = utils.NormalizeText(question)
+
 	// 1. Buscar contrato pelo slug (verificando dono)
 	contract, err := s.repo.GetBySlug(contractSlug, userID)
 	if err != nil {
@@ -412,6 +313,19 @@ func (s *ContractService) Chat(ctx context.Context, userID uint, contractSlug st
 	}
 
 	return answer, nil
+}
+
+func (s *ContractService) AnalyzeClause(ctx context.Context, clauseText string) (*AIClauseResult, error) {
+	if clauseText == "" {
+		return nil, fmt.Errorf("texto da cláusula não pode estar vazio")
+	}
+
+	// Limitar tamanho para evitar abusos no endpoint gratuito
+	if len(clauseText) > 5000 {
+		clauseText = clauseText[:5000]
+	}
+
+	return s.ai.AnalyzeClause(ctx, utils.NormalizeText(clauseText))
 }
 
 func (s *ContractService) AddNote(userID uint, contractSlug string, content string, selectedText string, color string) (*models.Note, error) {
@@ -576,7 +490,6 @@ func (s *ContractService) ListActivity(userID uint) ([]ActivityItem, error) {
 		}
 	}
 
-
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].Time.After(items[j].Time)
 	})
@@ -611,6 +524,9 @@ func (s *ContractService) CompareContracts(ctx context.Context, userID uint, bas
 }
 
 func (s *ContractService) SearchGlobal(ctx context.Context, userID uint, question string) (string, error) {
+	// 0. Sanitize input
+	question = utils.NormalizeText(question)
+
 	// 1. Gerar embedding da pergunta
 	questionEmbedding, err := s.ai.GenerateEmbedding(ctx, question)
 	if err != nil {

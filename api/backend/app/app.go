@@ -29,7 +29,11 @@ func NewApp() http.Handler {
 	notificationService := services.NewNotificationService(contractRepo)
 	notificationHandler := handlers.NewNotificationHandler(contractRepo)
 
-	contractService := services.NewContractService(contractRepo, nil, nil, storage)
+	aiAdapter := &adapters.GeminiAdapter{}
+	pdfAdapter := &adapters.PDFAdapter{}
+	ragService := services.NewRAGService(contractRepo, aiAdapter, notificationService)
+
+	contractService := services.NewContractService(contractRepo, aiAdapter, pdfAdapter, storage, ragService)
 	contractService.SetNotificationService(notificationService)
 	contractHandler := handlers.NewContractHandler(contractService)
 
@@ -128,6 +132,9 @@ func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *ha
 	mux.HandleFunc("/push/subscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Subscribe)))
 	mux.HandleFunc("/push/unsubscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Unsubscribe)))
 
+	// Public Tools
+	mux.HandleFunc("/analyze-clause", corsMiddleware(handlers.RateLimitMiddleware(contract.AnalyzeClause)))
+
 	// Protegidas
 	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Upload)))
 	mux.HandleFunc("/contracts/compare", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Compare)))
@@ -135,11 +142,11 @@ func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *ha
 	mux.HandleFunc("/chat", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Chat)))
 	mux.HandleFunc("/activity", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Activity)))
 	mux.HandleFunc("/stats", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Stats)))
-	
+
 	mux.HandleFunc("/user", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
 		handleUserRoute(w, r, contract)
 	})))
-	
+
 	mux.HandleFunc("/contracts/", corsMiddleware(handlers.AuthMiddleware(contractRepo, func(w http.ResponseWriter, r *http.Request) {
 		handleContractsRoute(w, r, contract)
 	})))

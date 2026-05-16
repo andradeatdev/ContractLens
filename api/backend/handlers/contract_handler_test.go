@@ -24,7 +24,7 @@ func setupContractTest(t *testing.T) (*ContractHandler, repositories.Repository,
 	_ = db.AutoMigrate(&models.User{}, &models.Contract{}, &models.Risk{}, &models.ChatMessage{}, &models.Note{})
 
 	repo := repositories.NewGormRepository(db)
-	service := services.NewContractService(repo, nil, nil, nil)
+	service := services.NewContractService(repo, nil, nil, nil, nil)
 	handler := NewContractHandler(service)
 
 	return handler, repo, db
