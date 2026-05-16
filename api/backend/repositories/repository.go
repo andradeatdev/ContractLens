@@ -38,4 +38,9 @@ type Repository interface {
 	GetUserByEmail(email string) (*models.User, error)
 	GetUserByVerificationToken(token string) (*models.User, error)
 	EnsureDefaultUser() error
+
+	// Push Notifications
+	CreatePushSubscription(sub *models.PushSubscription) error
+	DeletePushSubscription(endpoint string) error
+	GetPushSubscriptionsByUserID(userID uint) ([]models.PushSubscription, error)
 }

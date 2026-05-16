@@ -8,13 +8,35 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema, type ProfileInput } from "@/lib/validations/auth";
 import { cn } from "@/lib/utils";
 import { useModal } from "@/components/modal-provider";
+import { subscribeToPush } from "@/lib/push";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [initialProfile, setInitialProfile] = useState<ProfileInput | null>(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const modal = useModal();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPushEnabled(Notification.permission === "granted");
+    }
+  }, []);
+
+  const handlePushToggle = async () => {
+    if (pushEnabled) {
+      modal.alert({
+        title: "Desativar notificações",
+        message: "Para desativar completamente, você deve remover a permissão nas configurações do seu navegador.",
+        type: "info"
+      });
+      return;
+    }
+
+    const sub = await subscribeToPush();
+    if (sub) setPushEnabled(true);
+  };
 
   const {
     register,
@@ -198,30 +220,26 @@ export default function SettingsPage() {
 
             <hr className="border-border" />
 
-            {/* Seção: Notificações (Desativado/Externo) */}
+            {/* Seção: Notificações */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-1">
-                <h3 className="font-bold text-muted-foreground">Serviços Externos</h3>
-                <p className="text-sm text-muted-foreground">Funcionalidades que requerem integração.</p>
+                <h3 className="font-bold">Notificações</h3>
+                <p className="text-sm text-muted-foreground">Escolha como deseja ser avisado sobre seus contratos.</p>
               </div>
-              <div className="md:col-span-2 space-y-4 opacity-50 grayscale pointer-events-none">
-                <SettingsToggle 
-                  icon={<Mail />} 
-                  title="Avisos por Email" 
-                  description="Receba resumos de análises e alertas diretamente na sua caixa de entrada." 
-                  disabled
-                />
+              <div className="md:col-span-2 space-y-4">
                 <SettingsToggle 
                   icon={<Bell />} 
                   title="Push Notifications" 
-                  description="Notificações em tempo real no seu navegador." 
+                  description="Receba alertas de análise concluída e riscos críticos no navegador." 
+                  enabled={pushEnabled}
+                  onChange={handlePushToggle}
                 />
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 items-start mt-2">
-                   <div className="mt-0.5"><Settings className="h-4 w-4 text-amber-600" /></div>
-                   <p className="text-xs text-amber-800 font-medium">
-                     Integrações externas (SendGrid/SMTP) estão temporariamente desativadas neste ambiente de desenvolvimento.
-                   </p>
-                </div>
+                <SettingsToggle 
+                  icon={<Mail />} 
+                  title="Avisos por Email" 
+                  description="Receba resumos de análises e alertas diretamente na sua caixa de entrada. (Em breve)" 
+                  disabled
+                />
               </div>
             </div>
             
@@ -258,13 +276,15 @@ function SettingsToggle({
   title, 
   description, 
   enabled = false,
-  disabled = false 
+  disabled = false,
+  onChange
 }: { 
   icon: React.ReactNode, 
   title: string, 
   description: string, 
   enabled?: boolean,
-  disabled?: boolean
+  disabled?: boolean,
+  onChange?: () => void
 }) {
   return (
     <div className={`flex items-center justify-between p-6 bg-background rounded-[1.5rem] border border-border transition-all group ${disabled ? 'cursor-not-allowed' : 'hover:border-primary/30'}`}>
@@ -279,7 +299,8 @@ function SettingsToggle({
       </div>
       <button 
         disabled={disabled}
-        className={`h-6 w-11 rounded-full transition-colors relative shadow-inner ${enabled ? 'bg-primary' : 'bg-muted'} ${disabled ? 'opacity-50' : ''}`}
+        onClick={onChange}
+        className={`h-6 w-11 rounded-full transition-colors relative shadow-inner cursor-pointer ${enabled ? 'bg-primary' : 'bg-muted'} ${disabled ? 'opacity-50' : ''}`}
       >
         <div className={`absolute top-1 left-1 h-4 w-4 bg-white rounded-full transition-transform shadow-sm ${enabled ? 'translate-x-5' : ''}`} />
       </button>

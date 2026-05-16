@@ -21,7 +21,11 @@ func (r *GormRepository) Create(contract *models.Contract) error {
 
 func (r *GormRepository) GetByID(id uint, userID uint) (*models.Contract, error) {
 	var contract models.Contract
-	err := r.db.Preload("Risks").Preload("Messages").Preload("Notes").Where("id = ? AND user_id = ?", id, userID).First(&contract).Error
+	query := r.db.Preload("Risks").Preload("Messages").Preload("Notes").Where("id = ?", id)
+	if userID != 0 {
+		query = query.Where("user_id = ?", userID)
+	}
+	err := query.First(&contract).Error
 	return &contract, err
 }
 
@@ -183,4 +187,23 @@ func (r *GormRepository) EnsureDefaultUser() error {
 		return r.db.Create(user).Error
 	}
 	return nil
+}
+
+// Push Notifications
+func (r *GormRepository) CreatePushSubscription(sub *models.PushSubscription) error {
+	// Upsert por endpoint
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "endpoint"}},
+		DoUpdates: clause.AssignmentColumns([]string{"user_id", "p256dh", "auth"}),
+	}).Create(sub).Error
+}
+
+func (r *GormRepository) DeletePushSubscription(endpoint string) error {
+	return r.db.Where("endpoint = ?", endpoint).Delete(&models.PushSubscription{}).Error
+}
+
+func (r *GormRepository) GetPushSubscriptionsByUserID(userID uint) ([]models.PushSubscription, error) {
+	var subs []models.PushSubscription
+	err := r.db.Where("user_id = ?", userID).Find(&subs).Error
+	return subs, err
 }

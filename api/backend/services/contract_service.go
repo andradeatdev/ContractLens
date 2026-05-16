@@ -62,10 +62,11 @@ func (p *PDFExtractor) Extract(data []byte) (string, error) {
 }
 
 type ContractService struct {
-	repo      repositories.Repository
-	ai        AIAnalyzer
-	extractor TextExtractor
-	storage   FileStorage
+	repo         repositories.Repository
+	ai           AIAnalyzer
+	extractor    TextExtractor
+	storage      FileStorage
+	notification *NotificationService
 }
 
 func NewContractService(repo repositories.Repository, analyzer AIAnalyzer, extractor TextExtractor, storage FileStorage) *ContractService {
@@ -79,6 +80,10 @@ func NewContractService(repo repositories.Repository, analyzer AIAnalyzer, extra
 		storage = &LocalStorageAdapter{UploadDir: "uploads"}
 	}
 	return &ContractService{repo: repo, ai: analyzer, extractor: extractor, storage: storage}
+}
+
+func (s *ContractService) SetNotificationService(notif *NotificationService) {
+	s.notification = notif
 }
 
 func (s *ContractService) GenerateSlugPublic(filename string) string {
@@ -190,6 +195,34 @@ func (s *ContractService) processChunks(ctx context.Context, contractID uint, te
 
 	if err := s.repo.CreateChunks(documentChunks); err != nil {
 		log.Printf("Error: Falha ao salvar chunks no banco: %v", err)
+	} else {
+		// Notificar via Push
+		if s.notification != nil {
+			contract, err := s.repo.GetByID(contractID, 0)
+			if err == nil {
+				title := "Análise Concluída 🔍"
+				body := fmt.Sprintf("O contrato \"%s\" foi processado.", contract.Filename)
+
+				highRisks := 0
+				for _, r := range contract.Risks {
+					sev := strings.ToLower(r.Severity)
+					if sev == "high" || sev == "critico" || sev == "crítico" {
+						highRisks++
+					}
+				}
+
+				if highRisks > 0 {
+					title = "Riscos Críticos Detectados! ⚠️"
+					body = fmt.Sprintf("A análise de \"%s\" revelou %d riscos graves que requerem atenção.", contract.Filename, highRisks)
+				}
+
+				s.notification.SendNotification(contract.UserID, NotificationPayload{
+					Title: title,
+					Body:  body,
+					URL:   fmt.Sprintf("/dashboard/contracts/s/%s", contract.Slug),
+				})
+			}
+		}
 	}
 }
 

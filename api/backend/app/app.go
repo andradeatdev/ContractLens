@@ -26,14 +26,18 @@ func NewApp() http.Handler {
 		log.Printf("Erro ao criar usuário padrão: %v", err)
 	}
 
+	notificationService := services.NewNotificationService(contractRepo)
+	notificationHandler := handlers.NewNotificationHandler(contractRepo)
+
 	contractService := services.NewContractService(contractRepo, nil, nil, storage)
+	contractService.SetNotificationService(notificationService)
 	contractHandler := handlers.NewContractHandler(contractService)
 
 	authService := services.NewAuthService(contractRepo, emailSender)
 	authHandler := handlers.NewAuthHandler(authService)
 
 	mux := http.NewServeMux()
-	registerRoutes(mux, authHandler, contractHandler, contractRepo)
+	registerRoutes(mux, authHandler, contractHandler, notificationHandler, contractRepo)
 
 	return handlers.CanonicalLogMiddleware(mux)
 }
@@ -85,6 +89,7 @@ func initDB() *gorm.DB {
 		&models.ChatMessage{},
 		&models.Note{},
 		&models.DocumentChunk{},
+		&models.PushSubscription{},
 	)
 	if err != nil {
 		log.Printf("ERRO na migração do banco: %v", err)
@@ -108,7 +113,7 @@ func initStorage() services.FileStorage {
 	return &services.LocalStorageAdapter{UploadDir: uploadDir}
 }
 
-func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *handlers.ContractHandler, contractRepo repositories.Repository) {
+func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *handlers.ContractHandler, notification *handlers.NotificationHandler, contractRepo repositories.Repository) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "OK")
 	})
@@ -118,6 +123,10 @@ func registerRoutes(mux *http.ServeMux, auth *handlers.AuthHandler, contract *ha
 	mux.HandleFunc("/auth/login", corsMiddleware(auth.Login))
 	mux.HandleFunc("/auth/verify", corsMiddleware(auth.VerifyEmail))
 	mux.HandleFunc("/auth/resend-code", corsMiddleware(auth.ResendVerificationCode))
+
+	// Push Notifications
+	mux.HandleFunc("/push/subscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Subscribe)))
+	mux.HandleFunc("/push/unsubscribe", corsMiddleware(handlers.AuthMiddleware(contractRepo, notification.Unsubscribe)))
 
 	// Protegidas
 	mux.HandleFunc("/upload", corsMiddleware(handlers.AuthMiddleware(contractRepo, contract.Upload)))

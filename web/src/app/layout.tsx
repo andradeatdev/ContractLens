@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "@/components/ui/sonner";
+import { registerServiceWorker } from "@/lib/push";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -46,6 +47,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Registrar Service Worker para Push
+  if (typeof window !== "undefined") {
+    registerServiceWorker();
+  }
+
   return (
     <html
       lang="pt-BR"
