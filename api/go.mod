@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/SherClockHolmes/webpush-go v1.4.0
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/generative-ai-go v0.20.1
 	github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80
 	github.com/pgvector/pgvector-go v0.3.0
