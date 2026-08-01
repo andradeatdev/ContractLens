@@ -70,7 +70,7 @@ jobs:
           gosec -fmt=sarif -out=gosec_results.sarif ./api/... || true
 
       - name: Upload Gosec SARIF
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v4.37.3
         if: always()
         with:
           sarif_file: gosec_results.sarif
